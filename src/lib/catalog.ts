@@ -4,33 +4,13 @@ import { fallbackCatalog, type CatalogSnapshot } from "@/data/products";
 const ORIGIN = "https://miskova.myeasyorders.com";
 const API = "https://api.easy-orders.net/api/v1";
 
-export const ANNOUNCEMENT_TEXT = "FREE SHIPPING FOR ANY ORDER ABOVE 1200EGP";
-
-export type SortOptionId = "highest-rate" | "newest" | "oldest" | "lowest-price" | "highest-price";
-
-export const SORT_OPTIONS: { id: SortOptionId; label: string }[] = [
-  { id: "highest-rate", label: "Highest Rate" },
-  { id: "newest", label: "Newest" },
-  { id: "oldest", label: "Oldest" },
-  { id: "lowest-price", label: "Lowest Price" },
-  { id: "highest-price", label: "Highest Price" },
-];
-
-export const COLLECTION_SLUGS = {
+const COLLECTION_SLUGS = {
   summer: "Summer-fragrances",
   him: "men-fragrances",
   her: "women-fragrances",
   best: "best-fragrances",
   all: "all-products",
 } as const;
-
-export const COLLECTION_TITLES: Record<string, string> = {
-  [COLLECTION_SLUGS.summer]: "Summer Collection",
-  [COLLECTION_SLUGS.him]: "For Him",
-  [COLLECTION_SLUGS.her]: "For Her",
-  [COLLECTION_SLUGS.best]: "Best Sellers !",
-  [COLLECTION_SLUGS.all]: "All Products",
-};
 
 const ALL_PRODUCTS_CATEGORY_ID = "8e037e3f-f03a-46cd-8f17-f8c9d350e359";
 

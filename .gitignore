@@ -62,3 +62,5 @@ assets/platform/
 # one-off local probe scripts
 *.py
 !scripts/*.py
+premium-perfume-website-redesign/
+premium-perfume-website-redesign.zip

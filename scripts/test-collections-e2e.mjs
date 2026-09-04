@@ -1,7 +1,17 @@
 import puppeteer from "puppeteer-core";
 
+// Collections E2E for the adopted premium design:
+// shared sections on shared routes, canonical store CTAs (no bag), design NAV.
+
 const BASE_URL = process.env.BASE_URL || "http://127.0.0.1:3111";
 const CHROME_PATH = process.env.PUPPETEER_EXECUTABLE_PATH || "/usr/bin/google-chrome-stable";
+const STORE = "https://miskova.myeasyorders.com/products/";
+
+const failures = [];
+const check = (label, cond) => {
+  console.log(`${cond ? "PASS" : "FAIL"} ${label}`);
+  if (!cond) failures.push(label);
+};
 
 async function main() {
   console.log(`Launching Chrome for Collections E2E against ${BASE_URL}...`);
@@ -15,95 +25,138 @@ async function main() {
   await page.setViewport({ width: 1440, height: 900 });
 
   try {
-    // 1. Categories Directory (/collections)
-    console.log("Testing Categories Directory (/collections)...");
-    await page.goto(`${BASE_URL}/collections`, { waitUntil: "domcontentloaded" });
-    await page.waitForSelector(".mk-categories-grid", { timeout: 10000 });
-    const cats = await page.$$eval(".mk-category-name", (els) => els.map((e) => e.textContent?.trim()));
-    console.log("✓ Categories found:", cats);
-    if (!cats.includes("Summer Collection") || !cats.includes("For Him") || !cats.includes("For Her")) {
-      throw new Error(`Expected Summer Collection, For Him, For Her, got ${cats.join(", ")}`);
+    // 0. Homepage: design chrome + commerce contract
+    console.log("Testing homepage chrome...");
+    await page.goto(`${BASE_URL}/`, { waitUntil: "domcontentloaded" });
+    await page.waitForSelector("#reviews h2", { timeout: 15000 });
+
+    const reviewsH2 = await page.$eval("#reviews h2", (e) => e.textContent?.trim());
+    check("reviews heading exact", reviewsH2 === "Customer reviews");
+
+    for (const id of ["top", "collections", "summer", "best", "him", "her", "story", "reviews", "archive"]) {
+      check(`homepage section #${id}`, (await page.$(`#${id}`)) !== null);
     }
 
-    // 2. Summer Collection (/collections/summer)
-    console.log("Testing Summer Collection (/collections/summer)...");
-    await page.goto(`${BASE_URL}/collections/summer`, { waitUntil: "domcontentloaded" });
-    await page.waitForSelector(".mk-product-grid", { timeout: 10000 });
-    const summerTitle = await page.$eval("h1.collection-title", (e) => e.textContent?.trim());
-    console.log(`✓ Summer collection title: "${summerTitle}"`);
-    if (summerTitle !== "Summer Collection") throw new Error(`Expected Summer Collection, got ${summerTitle}`);
+    const navHrefs = await page.$$eval("header nav a", (els) => els.map((e) => e.getAttribute("href")));
+    for (const href of [
+      "/collections/summer",
+      "/collections/best-sellers",
+      "/collections/for-him",
+      "/collections/for-her",
+      "/collections/all",
+      "/#story",
+    ]) {
+      check(`header nav ${href}`, navHrefs.includes(href));
+    }
 
-    const summerCards = await page.$$eval(".mk-product-grid .mk-card", (els) => els.length);
-    console.log(`✓ Summer products count: ${summerCards}`);
-    if (summerCards !== 6) throw new Error(`Expected 6 summer products, got ${summerCards}`);
+    const marquee = await page.evaluate(() => document.body.textContent?.toUpperCase() || "");
+    check("shipping marquee text", marquee.includes("FREE SHIPPING") && marquee.includes("1200"));
 
-    // Test Add to cart on Pacific Sol
-    console.log("Testing Add to cart on Pacific Sol...");
-    const addBtn = await page.$("button[data-add='Pacific-Sol']");
-    if (!addBtn) throw new Error("Add to cart button not found for Pacific-Sol");
-    await addBtn.click();
+    const bodyText = await page.evaluate(() => document.body.textContent || "");
+    check("no bag anywhere on homepage", !bodyText.includes("Add to bag") && (await page.$("[data-add]")) === null && (await page.$("[data-cart-open]")) === null);
 
-    // Verify Cart Drawer opens
-    await page.waitForSelector(".mk-drawer.is-open", { timeout: 8000 });
-    console.log("✓ Cart drawer opened successfully");
-    const cartItemName = await page.$eval(".mk-cart-line h3", (e) => e.textContent?.trim());
-    console.log(`✓ Cart item name: "${cartItemName}"`);
-    if (!cartItemName.includes("Pacific Sol")) throw new Error(`Cart does not contain Pacific Sol: ${cartItemName}`);
+    const homeStoreCtas = await page.$$eval(`a[href^="${STORE}"]`, (els) => els.map((e) => e.getAttribute("href")));
+    check("homepage has canonical store CTAs", homeStoreCtas.length > 0);
+    check("store CTAs open new tab", await page.$$eval(`a[href^="${STORE}"]`, (els) => els.every((e) => e.target === "_blank")));
 
-    // Close Cart Drawer via evaluate
-    await page.evaluate(() => {
-      const btn = document.querySelector(".mk-drawer.is-open [data-mk-close]");
-      if (btn) btn.click();
-    });
-    await new Promise((r) => setTimeout(r, 600));
+    check("footer wordmark", bodyText.includes("MISKOVA"));
 
-    // 3. For Him Collection (/collections/for-him)
-    console.log("Testing For Him Collection (/collections/for-him)...");
-    await page.goto(`${BASE_URL}/collections/for-him`, { waitUntil: "domcontentloaded" });
-    await page.waitForSelector(".mk-product-grid", { timeout: 10000 });
-    const himTitle = await page.$eval("h1.collection-title", (e) => e.textContent?.trim());
-    console.log(`✓ For Him title: "${himTitle}"`);
-    if (himTitle !== "For Him") throw new Error(`Expected For Him, got ${himTitle}`);
-    const himCards = await page.$$eval(".mk-product-grid .mk-card", (els) => els.length);
-    console.log(`✓ For Him products count: ${himCards}`);
-    if (himCards !== 15) throw new Error(`Expected 15 products for him, got ${himCards}`);
+    // 1. Categories Directory (/collections)
+    console.log("Testing Collections Directory (/collections)...");
+    await page.goto(`${BASE_URL}/collections`, { waitUntil: "domcontentloaded" });
+    await page.waitForSelector("#collections", { timeout: 10000 });
+    const tilesTitle = await page.$eval("#collections h2", (e) => e.textContent?.replace(/\s+/g, " ").trim());
+    check("collections tiles heading", tilesTitle === "Choose your chapter");
+    const tileLinks = await page.$$eval("#collections a", (els) => els.map((e) => e.getAttribute("href")));
+    for (const href of ["/collections/summer", "/collections/for-him", "/collections/for-her"]) {
+      check(`tile link ${href}`, tileLinks.includes(href));
+    }
 
-    // 4. For Her Collection (/collections/for-her)
-    console.log("Testing For Her Collection (/collections/for-her)...");
-    await page.goto(`${BASE_URL}/collections/for-her`, { waitUntil: "domcontentloaded" });
-    await page.waitForSelector(".mk-product-grid", { timeout: 10000 });
-    const herTitle = await page.$eval("h1.collection-title", (e) => e.textContent?.trim());
-    console.log(`✓ For Her title: "${herTitle}"`);
-    if (herTitle !== "For Her") throw new Error(`Expected For Her, got ${herTitle}`);
-    const herCards = await page.$$eval(".mk-product-grid .mk-card", (els) => els.length);
-    console.log(`✓ For Her products count: ${herCards}`);
-    if (herCards !== 6) throw new Error(`Expected 6 products for her, got ${herCards}`);
+    // Helper: count unique canonical store CTAs on a collection page
+    const countStoreCtas = async (path, expected, label) => {
+      await page.goto(`${BASE_URL}${path}`, { waitUntil: "domcontentloaded" });
+      await page.waitForFunction(
+        (sel) => document.querySelectorAll(sel).length > 0,
+        { timeout: 15000 },
+        `a[href^="${STORE}"]`,
+      );
+      const unique = await page.$$eval(`a[href^="${STORE}"]`, (els) => new Set(els.map((e) => e.getAttribute("href"))).size);
+      console.log(`✓ ${label} store CTA count: ${unique}`);
+      check(`${label} count ${expected}`, unique === expected);
+      return unique;
+    };
 
-    // 5. All Products Archive (/collections/all)
-    console.log("Testing All Products Archive (/collections/all)...");
-    await page.goto(`${BASE_URL}/collections/all`, { waitUntil: "domcontentloaded" });
-    await page.waitForSelector(".mk-product-grid", { timeout: 10000 });
-    const allTitle = await page.$eval("h1.collection-title", (e) => e.textContent?.trim());
-    console.log(`✓ All Products title: "${allTitle}"`);
-    if (allTitle !== "All Products") throw new Error(`Expected All Products, got ${allTitle}`);
-    const allCards = await page.$$eval(".mk-product-grid .mk-card", (els) => els.length);
-    console.log(`✓ All products count: ${allCards}`);
-    if (allCards !== 16) throw new Error(`Expected 16 products, got ${allCards}`);
+    // 2. Summer (/collections/summer)
+    console.log("Testing Summer Sol (/collections/summer)...");
+    await countStoreCtas("/collections/summer", 6, "summer");
+    const summerH2 = await page.$eval("#summer h2", (e) => e.textContent?.replace(/\s+/g, ""));
+    check("summer heading Summer Sol", summerH2 === "SummerSol");
 
-    // 6. Best Sellers (/collections/best-sellers)
+    // 3. Best Sellers (/collections/best-sellers)
     console.log("Testing Best Sellers (/collections/best-sellers)...");
-    await page.goto(`${BASE_URL}/collections/best-sellers`, { waitUntil: "domcontentloaded" });
-    await page.waitForSelector(".mk-product-grid", { timeout: 10000 });
-    const bestTitle = await page.$eval("h1.collection-title", (e) => e.textContent?.trim());
-    console.log(`✓ Best sellers title: "${bestTitle}"`);
-    if (bestTitle !== "Best Sellers !") throw new Error(`Expected Best Sellers !, got ${bestTitle}`);
-    const bestCards = await page.$$eval(".mk-product-grid .mk-card", (els) => els.length);
-    console.log(`✓ Best sellers count: ${bestCards}`);
-    if (bestCards !== 6) throw new Error(`Expected 6 best sellers, got ${bestCards}`);
+    await countStoreCtas("/collections/best-sellers", 6, "best");
+    const bestH2 = await page.$eval("#best h2", (e) => e.textContent?.replace(/\s+/g, ""));
+    check("best heading Best Sellers", bestH2 === "BestSellers");
 
-    console.log("ALL COLLECTION PAGES AND COMMERCE TESTS PASSED!");
+    // 4. For Him (/collections/for-him)
+    console.log("Testing For Him (/collections/for-him)...");
+    await countStoreCtas("/collections/for-him", 15, "him");
+    const himH2 = await page.$eval("#him h2", (e) => e.textContent?.replace(/\s+/g, ""));
+    check("him heading For Him", himH2 === "ForHim");
+    const himViewAll = await page.$$eval("#him a", (els) => els.some((e) => e.getAttribute("href") === "/collections/all"));
+    check("him view-all links to /collections/all", himViewAll);
+
+    // 5. For Her (/collections/for-her)
+    console.log("Testing For Her (/collections/for-her)...");
+    await countStoreCtas("/collections/for-her", 6, "her");
+    const herH2 = await page.$eval("#her h2", (e) => e.textContent?.replace(/\s+/g, ""));
+    check("her heading For Her", herH2 === "ForHer");
+
+    // 6. All Chapters (/collections/all) — filters + sorts + full archive
+    console.log("Testing All Chapters (/collections/all)...");
+    await page.goto(`${BASE_URL}/collections/all`, { waitUntil: "domcontentloaded" });
+    await page.waitForSelector("#archive", { timeout: 10000 });
+    const allH2 = await page.$eval("#archive h2", (e) => e.textContent?.replace(/\s+/g, ""));
+    check("all heading All Chapters", allH2 === "AllChapters");
+
+    const allCount = await page.$$eval(`a[href^="${STORE}"]`, (els) => new Set(els.map((e) => e.getAttribute("href"))).size);
+    console.log(`✓ All products count: ${allCount}`);
+    check("all count 16", allCount === 16);
+
+    const sortOptions = await page.$$eval("#archive select option", (els) => els.map((e) => e.textContent?.trim()));
+    check(
+      "sort labels Chapter / Price ↑ / Price ↓",
+      sortOptions.join("|") === "Chapter|Price ↑|Price ↓",
+    );
+
+    const filterLabels = await page.$$eval("#archive button", (els) => els.map((e) => e.textContent?.trim()));
+    for (const f of ["All", "Summer", "Best sellers", "For him", "For her", "Bundles"]) {
+      check(`filter button ${f}`, filterLabels.includes(f));
+    }
+    const bundlesClicked = await page.evaluate(() => {
+      const btn = Array.from(document.querySelectorAll("#archive button")).find(
+        (e) => e.textContent?.trim() === "Bundles",
+      );
+      if (!btn) return false;
+      btn.click();
+      return true;
+    });
+    check("bundles button clickable", bundlesClicked);
+    await new Promise((r) => setTimeout(r, 800));
+    const bundlesCount = await page.$$eval(`a[href^="${STORE}"]`, (els) => new Set(els.map((e) => e.getAttribute("href"))).size);
+    check("bundles filter shows 2", bundlesCount === 2);
+
+    const noBag = await page.evaluate(() => !document.body.textContent?.includes("Add to bag"));
+    check("no bag on any collection page", noBag);
+
+    console.log(failures.length === 0 ? "ALL COLLECTION PAGES AND COMMERCE TESTS PASSED!" : `${failures.length} FAILURES`);
   } finally {
     await browser.close().catch(() => {});
+  }
+
+  if (failures.length > 0) {
+    console.error("Collections E2E failures:", failures);
+    process.exit(1);
   }
 }
 

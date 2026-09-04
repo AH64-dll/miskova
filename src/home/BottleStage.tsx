@@ -4,6 +4,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { buildMiskovaBottle, FLOOR_Y, type MiskovaBottle } from "./bottle/bottleModel";
+import { bySlug } from "@/data/products";
 import { createFluidPhysics, type FluidPhysics } from "./bottle/fluidPhysics";
 import { createAtomizerSpring, createCapSpring, type AtomizerSpring, type CapSpring } from "./springs";
 import { createSpraySystem, type SpraySystem } from "./spray";
@@ -11,6 +12,7 @@ import { createWakeField, type WakeField } from "./wake";
 import { createInteractiveSurface, type InteractiveSurface } from "./InteractiveSurface";
 import { createBackdrop, createStudioEnvironment } from "./environment";
 import backdropStyles from "./hero-backdrop.module.css";
+import "./bottle-stage.css";
 import {
   clearPointer,
   clamp,
@@ -34,8 +36,8 @@ const CAMERA = {
 
 const POINTER_PARALLAX = { rotationX: 0.012, rotationY: 0.022, positionX: 0.022, positionY: 0.012 };
 
-const BG_BASE = new THREE.Color("#f4f1e9");
-const BG_WARM = new THREE.Color("#efe3cb");
+const BG_BASE = new THREE.Color("#0b0b0c");
+const BG_WARM = new THREE.Color("#241d12");
 const BG_NIGHT = new THREE.Color("#141a13");
 
 function isDescendant(object: THREE.Object3D, ancestor: THREE.Object3D): boolean {
@@ -72,7 +74,9 @@ function StageContents({ host, mobile, compact, reduceMotion, onReady, onFail }:
   const backdrop = useMemo(() => createBackdrop(FLOOR_Y), []);
 
   const rig = useMemo(() => {
-    const bottle = buildMiskovaBottle();
+    // The hero stage presents the featured chapter — label matches the caption.
+    const featured = bySlug("Liquid-Gold");
+    const bottle = buildMiskovaBottle({ brand: "MISKOVA", name: featured.name, sub: "EXTRAIT DE PARFUM" });
     const spray = createSpraySystem(mobile, gl.getPixelRatio());
     const wake = createWakeField(mobile);
     const surface = createInteractiveSurface(FLOOR_Y);
@@ -591,7 +595,7 @@ export default function BottleStage({ className = "" }: { className?: string }) 
           <div className={backdropStyles.monogram} aria-hidden="true">
             M
           </div>
-          <span className={backdropStyles.fallbackWord}>Miss Cova</span>
+          <span className={backdropStyles.fallbackWord}>Miskova</span>
         </div>
       )}
       <button
@@ -607,7 +611,7 @@ export default function BottleStage({ className = "" }: { className?: string }) 
         Preparing the bottle
       </div>
       <p className="bottleStage__error">
-        The 3D composition could not be loaded. Crimson Bloom is still available below.
+        The 3D composition could not be loaded. The chapters are still available below.
       </p>
     </div>
   );

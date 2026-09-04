@@ -1,6 +1,5 @@
 /* Journey hero backdrop + typographic fallback.
-   Colocated owner: src/home/Journey.tsx + src/home/BottleStage.tsx.
-   Frozen shared stylesheets (globals/site-shell/home/collections) are untouched. */
+   Colocated owner: src/home/BottleStage.tsx (design hero mount). */
 
 .hero {
   overflow: clip;

@@ -1,9 +1,5 @@
 import type { Metadata } from "next";
-import CollectionListing from "../CollectionListing";
-import { fallbackCatalog } from "@/data/products";
-import styles from "./summer.module.css";
-import "@/app/home.css";
-import "../collections.css";
+import SummerSection from "@/home/SummerSection";
 
 export const metadata: Metadata = {
   title: "Summer Collection | Miskova Fragrances",
@@ -11,12 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function SummerCollectionPage() {
-  const summerProducts = fallbackCatalog.products.filter((p) =>
-    p.categorySlugs.includes("Summer-fragrances"),
-  );
-  return (
-    <div className={styles.scope}>
-      <CollectionListing title="Summer Collection" products={summerProducts} theme="summer-page-theme" />
-    </div>
-  );
+  return <SummerSection />;
 }

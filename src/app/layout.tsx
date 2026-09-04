@@ -1,41 +1,51 @@
-import type { Metadata } from "next";
-import localFont from "next/font/local";
-import MiskovaCommerce from "@/components/MiskovaCommerce";
+import type { Metadata, Viewport } from "next";
+import { Cormorant_Garamond, Jost } from "next/font/google";
+import Curtain from "@/components/Curtain";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+import ProductDetail from "@/components/ProductDetail";
+import MobileTabBar from "@/components/MobileTabBar";
+import { StoreProvider } from "@/components/store";
 import "./globals.css";
-import "./site-shell.css";
 
-const almarai = localFont({
-  src: [
-    { path: "../../public/fonts/tsstApxBaigK_hnnQ1iFo0C3.woff2", weight: "400", style: "normal" },
-    { path: "../../public/fonts/tsstApxBaigK_hnnQ12Fow.woff2", weight: "700", style: "normal" },
-  ],
+const cormorant = Cormorant_Garamond({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600"],
+  style: ["normal", "italic"],
+  variable: "--font-cormorant",
   display: "swap",
-  preload: false,
 });
 
-const bodoni = localFont({
-  src: [
-    { path: "../../public/fonts/bodoni-moda-regular.woff2", weight: "400", style: "normal" },
-    { path: "../../public/fonts/bodoni-moda-bold.woff2", weight: "700", style: "normal" },
-    { path: "../../public/fonts/bodoni-moda-italic.woff2", weight: "400", style: "italic" },
-  ],
-  variable: "--font-bodoni",
+const jost = Jost({
+  subsets: ["latin"],
+  weight: ["300", "400", "500"],
+  variable: "--font-jost",
   display: "swap",
-  preload: false,
 });
 
 export const metadata: Metadata = {
-  title: "Miskova Fragrances",
+  title: "Miskova Fragrances — Seal Your Story",
   description:
-    "Enter the world of Miskova Fragrances. Luxurious, long-lasting scents crafted to seal your story with elegance. Find your perfect chapter today.",
+    "Miskova Fragrances — Seal your story. A house of fragrance chapters, crafted in Cairo, Egypt.",
   icons: { icon: "/assets/brand/favicon.webp" },
 };
+
+export const viewport: Viewport = {
+  themeColor: "#0b0b0c",
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={bodoni.variable}>
-      <body className={`${almarai.className} ${bodoni.variable}`}>
-        {children}
-        <MiskovaCommerce />
+    <html lang="en" className={`${cormorant.variable} ${jost.variable}`}>
+      <body>
+        <StoreProvider>
+          <Curtain />
+          <Header />
+          {children}
+          <Footer />
+          <ProductDetail />
+          <MobileTabBar />
+        </StoreProvider>
       </body>
     </html>
   );

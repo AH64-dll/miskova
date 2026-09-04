@@ -4,7 +4,6 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import Image from "next/image";
 import { patronDispatches } from "@/data/patronDispatches";
 import { PatronLightbox } from "./PatronLightbox";
-import lux from "./luxury.module.css";
 
 const AUTO_ADVANCE_MS = 5500;
 const SWIPE_THRESHOLD_PX = 45;
@@ -112,7 +111,7 @@ export function PatronCarousel() {
   return (
     <div
       ref={containerRef}
-      className={`patron-carousel-wrapper ${lux.scope}`}
+      className="patron-carousel-wrapper group relative mt-14 border-y border-cream/10 py-10 focus:outline-none"
       role="region"
       aria-roledescription="carousel"
       aria-label="Customer reviews"
@@ -125,18 +124,19 @@ export function PatronCarousel() {
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUpOrCancel}
       onPointerCancel={handlePointerUpOrCancel}
+      onKeyDown={handleKeyDown}
     >
-      <div className="patron-carousel-top">
-        <div className="patron-slide-counter" aria-live="polite" aria-atomic="true">
-          <span className="counter-current">{activeIndex + 1}</span>
-          <span className="counter-divider" aria-hidden="true">/</span>
-          <span className="counter-total">{totalSlides}</span>
+      <div className="patron-carousel-top flex items-center justify-between">
+        <div className="patron-slide-counter flex items-baseline gap-2 font-sans text-sm text-cream/60" aria-live="polite" aria-atomic="true">
+          <span className="counter-current tabular-nums text-gold">{activeIndex + 1}</span>
+          <span className="counter-divider text-cream/30" aria-hidden="true">/</span>
+          <span className="counter-total tabular-nums">{totalSlides}</span>
         </div>
 
-        <div className="patron-nav-buttons">
+        <div className="patron-controls-cluster patron-nav-buttons flex items-center gap-2">
           <button
             type="button"
-            className="patron-arrow-btn"
+            className="patron-arrow-btn flex h-10 w-10 items-center justify-center rounded-full border border-cream/20 text-cream/70 transition-colors duration-500 hover:border-gold hover:text-gold"
             onClick={handlePrev}
             aria-label="Previous customer review"
           >
@@ -146,7 +146,7 @@ export function PatronCarousel() {
           </button>
           <button
             type="button"
-            className="patron-arrow-btn"
+            className="patron-arrow-btn flex h-10 w-10 items-center justify-center rounded-full border border-cream/20 text-cream/70 transition-colors duration-500 hover:border-gold hover:text-gold"
             onClick={handleNext}
             aria-label="Next customer review"
           >
@@ -158,41 +158,44 @@ export function PatronCarousel() {
       </div>
 
       <div
-        className="patron-stage"
+        className="patron-stage mt-6 flex justify-center"
         style={{
           transform: dragOffset !== 0 ? `translateX(${dragOffset}px)` : undefined,
           transition: isDragging ? "none" : "transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
         }}
       >
         <div className="patron-card-split">
-          <div className="patron-screenshot-frame">
-            <div className="patron-image-container">
+          <div className="patron-screenshot-frame relative bg-cream p-3 pb-10 shadow-[0_40px_60px_-30px_rgba(0,0,0,0.8)]">
+            <div className="patron-image-container group/img relative overflow-hidden bg-bone">
               <Image
                 key={currentDispatch.id}
                 src={currentDispatch.localPath || currentDispatch.cdnUrl}
                 alt={currentDispatch.altText}
                 width={500}
                 height={650}
-                className="patron-screenshot-img"
+                className="patron-screenshot-img h-auto w-full object-cover"
                 loading="lazy"
                 sizes="(min-width: 900px) 500px, 90vw"
               />
 
               <button
                 type="button"
-                className="patron-hover-badge"
+                className="patron-hover-badge absolute inset-0 flex items-end justify-start bg-gradient-to-t from-ink/50 via-transparent to-transparent p-4 opacity-0 transition-opacity duration-500 focus:opacity-100 group-hover/img:opacity-100"
                 onClick={() => setLightboxIndex(activeIndex)}
                 aria-label={`Open screenshot ${activeIndex + 1} fullscreen`}
               >
-                <span className="patron-hover-text">Open fullscreen</span>
+                <span className="patron-hover-text eyebrow bg-ink px-3 py-2 text-[9px] text-cream">Open fullscreen</span>
               </button>
             </div>
+            <p className="mt-4 px-1 text-center eyebrow text-[9px] text-ink/50">
+              Patron dispatch · {String(activeIndex + 1).padStart(2, "0")}
+            </p>
           </div>
         </div>
       </div>
 
-      <div className="patron-carousel-footer">
-        <div className="patron-pills-row" role="group" aria-label="Select customer review slide">
+      <div className="patron-carousel-footer mt-6 flex justify-center">
+        <div className="patron-pills-row flex items-center gap-2.5" role="group" aria-label="Select customer review slide">
           {patronDispatches.map((dispatch, idx) => (
             <button
               key={dispatch.id}
@@ -200,10 +203,10 @@ export function PatronCarousel() {
               aria-current={idx === activeIndex ? "true" : undefined}
               aria-label={`Show customer review ${idx + 1} of ${totalSlides}`}
               aria-pressed={idx === activeIndex}
-              className={`patron-pill-dot ${idx === activeIndex ? "is-active" : ""}`}
+              className={`patron-pill-dot flex h-3 w-3 items-center justify-center rounded-full border transition-colors duration-500 ${idx === activeIndex ? "border-gold" : "border-cream/30 hover:border-cream/60"}`}
               onClick={() => handleGoTo(idx)}
             >
-              <span className="pill-dot-inner" aria-hidden="true" />
+              <span className={`pill-dot-inner h-1.5 w-1.5 rounded-full ${idx === activeIndex ? "bg-gold" : "bg-transparent"}`} aria-hidden="true" />
             </button>
           ))}
         </div>

@@ -4,7 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { CatalogProduct } from "@/data/products";
 import type { Review, ReviewStats } from "@/types/reviews";
 import { PatronCarousel } from "./reviews/PatronCarousel";
-import lux from "./reviews/luxury.module.css";
+import { useStore } from "@/components/store";
+import { Button, Eyebrow, Rule } from "@/components/ui";
 
 const HELPFUL_VOTES_KEY = "miskova:helpful-votes";
 
@@ -12,13 +13,13 @@ type SearchProduct = Pick<CatalogProduct, "name" | "slug">;
 
 function StarPips({ rating, size = 15 }: { rating: number; size?: number }) {
   return (
-    <span className="star-pips" role="img" aria-label={`${rating} out of 5 stars`}>
+    <span className="star-pips inline-flex items-center gap-0.5" role="img" aria-label={`${rating} out of 5 stars`}>
       {[1, 2, 3, 4, 5].map((pip) => (
         <svg key={pip} width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
           <path
             d="M12 2.6l2.9 5.9 6.5.95-4.7 4.58 1.1 6.47L12 17.44 6.2 20.5l1.1-6.47L2.6 9.45l6.5-.95z"
-            fill={pip <= rating ? "var(--gold)" : "none"}
-            stroke={pip <= rating ? "var(--gold)" : "var(--line)"}
+            fill={pip <= rating ? "var(--color-her-rose)" : "none"}
+            stroke={pip <= rating ? "var(--color-her-rose)" : "var(--color-smoke)"}
             strokeWidth="1.4"
           />
         </svg>
@@ -159,24 +160,28 @@ export function ReviewList({
   }
 
   return (
-    <div className="reviews-registry-wrapper">
+    <div className="mx-auto max-w-[1600px] px-5 md:px-10">
       {hasReviews && (
-        <div className="reviews-overview-card">
-          <div className="overview-score-box">
-            <div className="overview-score-number">{stats?.averageRating ?? "—"}</div>
+        <div className="mt-14 flex flex-col items-center gap-10 md:flex-row md:items-end md:justify-between">
+          {/* Score */}
+          <div className="w-full max-w-sm border border-gold/20 bg-ink-2 p-8 text-center">
+            <div className="font-display text-6xl font-light leading-none text-gold-2">
+              {stats?.averageRating ?? "—"}
+            </div>
             <div
-              className="overview-stars"
+              className="mt-4 flex justify-center"
               role="img"
               aria-label={`${stats?.averageRating} out of 5 stars`}
             >
               <StarPips rating={stats ? Math.round(stats.averageRating) : 0} size={17} />
             </div>
-            <div className="overview-count">
+            <div className="mt-4 eyebrow text-[10px] text-cream/50">
               Based on {stats?.totalReviews} {stats?.totalReviews === 1 ? "review" : "reviews"}
             </div>
           </div>
 
-          <div className="overview-bars" aria-hidden={loadState === "loading"}>
+          {/* Breakdown bars */}
+          <div className="w-full max-w-md" aria-hidden={loadState === "loading"}>
             {[5, 4, 3, 2, 1].map((star) => {
               const count = stats?.breakdown[star as 1 | 2 | 3 | 4 | 5] ?? 0;
               const total = stats?.totalReviews ?? 0;
@@ -186,19 +191,24 @@ export function ReviewList({
                 <button
                   key={star}
                   type="button"
-                  className={`bar-row-btn ${isSelected ? "bar-active" : ""}`}
+                  className={`group flex w-full items-center gap-4 py-1.5 text-left ${isSelected ? "opacity-100" : "opacity-70 hover:opacity-100"}`}
                   onClick={() =>
                     setSelectedRating((prev) => (prev === String(star) ? "all" : String(star)))
                   }
                   title={`Filter by ${star} stars (${count} reviews)`}
                 >
-                  <span className="bar-star-label">
+                  <span className="eyebrow w-4 text-[10px] text-cream/60">
                     <span>{star}</span>
                   </span>
-                  <span className="bar-track">
-                    <span className="bar-fill" style={{ width: `${percentage}%` }} />
+                  <span className="relative h-px flex-1 bg-cream/15">
+                    <span
+                      className="absolute inset-y-0 left-0 bg-gold"
+                      style={{ width: `${percentage}%` }}
+                    />
                   </span>
-                  <span className="bar-count-label">{count}</span>
+                  <span className="w-6 text-right font-sans text-[11px] tabular-nums text-cream/50">
+                    {count}
+                  </span>
                 </button>
               );
             })}
@@ -207,31 +217,29 @@ export function ReviewList({
       )}
 
       {hasReviews && (
-        <div className="reviews-toolbar">
-          <div className="toolbar-left">
-            <div className="filter-select-wrapper">
-              <select
-                aria-label="Filter reviews by fragrance"
-                value={selectedProduct}
-                onChange={(e) => setSelectedProduct(e.target.value)}
-                className="filter-select"
-              >
-                <option value="all">All Fragrances ({reviewsList.length})</option>
-                {products.map((p) => (
-                  <option key={p.slug} value={p.slug}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+        <div className="mt-10 flex flex-wrap items-center justify-between gap-4 border-y border-cream/10 py-4">
+          <div>
+            <select
+              aria-label="Filter reviews by fragrance"
+              value={selectedProduct}
+              onChange={(e) => setSelectedProduct(e.target.value)}
+              className="border border-gold/20 bg-ink-2 px-3 py-2 font-sans text-xs text-cream focus:outline-none"
+            >
+              <option value="all">All Fragrances ({reviewsList.length})</option>
+              {products.map((p) => (
+                <option key={p.slug} value={p.slug}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
           </div>
-          <div className="toolbar-right">
-            <span className="sort-label">Sort by:</span>
+          <div className="flex items-center gap-3">
+            <span className="eyebrow text-[10px] text-cream/40">Sort by:</span>
             <select
               aria-label="Sort reviews by criteria"
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="sort-select"
+              className="border border-gold/20 bg-ink-2 px-3 py-2 font-sans text-xs text-cream focus:outline-none"
             >
               <option value="newest">Most Recent</option>
               <option value="highest">Highest Rated</option>
@@ -242,36 +250,42 @@ export function ReviewList({
       )}
 
       {loadState === "error" ? (
-        <div className="reviews-error-banner" role="alert">
-          <p className="error-banner-text">Reviews could not be loaded.</p>
-          <button type="button" className="reset-filters-btn" onClick={() => fetchReviews()}>
+        <div className="mt-10 border border-her-rose/40 bg-her-deep/20 p-6 text-center" role="alert">
+          <p className="font-sans text-sm text-cream/80">Reviews could not be loaded.</p>
+          <button
+            type="button"
+            className="link-draw eyebrow mt-3 text-[10px] text-gold"
+            onClick={() => fetchReviews()}
+          >
             Try again
           </button>
         </div>
       ) : loadState === "loading" ? (
-        <div className="reviews-grid" aria-busy="true" aria-label="Loading reviews">
+        <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-3" aria-busy="true" aria-label="Loading reviews">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="review-card reviews-skeleton" aria-hidden="true">
-              <div className="skeleton-line skeleton-line--title" />
-              <div className="skeleton-line" />
-              <div className="skeleton-line" />
-              <div className="skeleton-line skeleton-line--short" />
+            <div key={i} className="review-card reviews-skeleton bg-cream/95 p-6" aria-hidden="true">
+              <div className="skeleton-line skeleton-line--title mb-3 h-4 w-1/2 animate-pulse bg-ink/10" />
+              <div className="skeleton-line mb-2 h-3 w-full animate-pulse bg-ink/10" />
+              <div className="skeleton-line mb-2 h-3 w-full animate-pulse bg-ink/10" />
+              <div className="skeleton-line skeleton-line--short h-3 w-2/3 animate-pulse bg-ink/10" />
             </div>
           ))}
         </div>
       ) : reviewsList.length === 0 ? (
-        <div className="no-reviews-box zero-registry-box">
-          <p className="no-reviews-text">No reviews yet</p>
-          <button type="button" className="mk-primary-button write-first-btn" onClick={onWrite}>
-            Write a review
-          </button>
+        <div className="mt-12 border border-cream/10 bg-ink-2 p-12 text-center">
+          <p className="font-display text-2xl font-light italic text-cream/80">No reviews yet</p>
+          <div className="mt-6 flex justify-center">
+            <Button variant="gold" onClick={onWrite}>
+              Write a review
+            </Button>
+          </div>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="no-reviews-box">
-          <p>No reviews match your selected filters.</p>
+        <div className="mt-12 border border-cream/10 bg-ink-2 p-12 text-center">
+          <p className="font-sans text-sm text-cream/70">No reviews match your selected filters.</p>
           <button
             type="button"
-            className="reset-filters-btn"
+            className="link-draw eyebrow mt-3 text-[10px] text-gold"
             onClick={() => {
               setSelectedRating("all");
               setSelectedProduct("all");
@@ -281,7 +295,7 @@ export function ReviewList({
           </button>
         </div>
       ) : (
-        <div className="reviews-grid">
+        <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-3">
           {filtered.map((rev) => {
             const matchedProduct = products.find(
               (p) => p.slug.toLowerCase() === rev.productSlug.toLowerCase(),
@@ -292,44 +306,42 @@ export function ReviewList({
               <article
                 key={rev.id}
                 id={`review-${rev.id}`}
-                className={`review-card ${isNewlyAdded ? "is-newly-added" : ""}`}
+                className={`review-card bg-cream p-6 pb-7 text-ink shadow-[0_40px_60px_-30px_rgba(0,0,0,0.8)] ${isNewlyAdded ? "ring-1 ring-gold" : ""}`}
               >
-                <div className="review-card-header">
-                  <div className="reviewer-info">
-                    <div>
-                      <div className="reviewer-name-row">
-                        <span className="reviewer-name">{rev.authorName}</span>
-                        <span className="community-badge">· {rev.location}</span>
-                      </div>
-                      <div className="reviewer-meta">
-                        <time dateTime={rev.createdAt}>{formatDate(rev.createdAt)}</time>
-                      </div>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="flex items-baseline gap-2">
+                      <span className="font-display text-xl italic leading-none">{rev.authorName}</span>
+                      <span className="eyebrow text-[9px] text-gold-3">· {rev.location}</span>
+                    </div>
+                    <div className="mt-1.5 eyebrow text-[9px] text-ink/45">
+                      <time dateTime={rev.createdAt}>{formatDate(rev.createdAt)}</time>
                     </div>
                   </div>
                   <StarPips rating={rev.rating} />
                 </div>
 
                 {matchedProduct && (
-                  <div className="review-product-tag">
-                    <span className="tag-fragrance-name">{matchedProduct.name}</span>
+                  <div className="mt-4 inline-block bg-ink px-2 py-1">
+                    <span className="eyebrow text-[9px] text-cream/80">{matchedProduct.name}</span>
                   </div>
                 )}
 
-                <div className="review-content">
-                  <h3 className="review-headline">{rev.title}</h3>
-                  <p className="review-body-text">{rev.comment}</p>
+                <div className="mt-4">
+                  <h3 className="font-display text-xl leading-snug">{rev.title}</h3>
+                  <p className="mt-2 font-sans text-[13px] font-light leading-relaxed text-ink/75">{rev.comment}</p>
                 </div>
 
-                <div className="review-card-footer">
+                <div className="mt-5 flex justify-end border-t border-ink/10 pt-3">
                   <button
                     type="button"
-                    className={`helpful-btn ${isVoted ? "voted" : ""}`}
+                    className={`link-draw eyebrow text-[9px] ${isVoted ? "text-her-rose" : "text-ink/60 hover:text-ink"}`}
                     onClick={() => handleHelpful(rev.id)}
                     disabled={isVoted}
                     aria-label={`Mark review by ${rev.authorName} as helpful. Currently ${rev.helpfulCount} helpful votes.`}
                   >
                     <span>{isVoted ? "Helpful" : "Helpful?"}</span>
-                    <span className="helpful-count">({rev.helpfulCount})</span>
+                    <span className="ml-1 tabular-nums">({rev.helpfulCount})</span>
                   </button>
                 </div>
               </article>
@@ -468,14 +480,17 @@ export function ReviewDialog({
     }
   };
 
+  const inputCls =
+    "form-input w-full border border-ink/20 bg-white px-3 py-2.5 font-sans text-sm text-ink placeholder:text-ink/35 focus:border-ink focus:outline-none";
+
   return (
     <>
-      <button type="button" className="mk-primary-button header-write-btn" onClick={open}>
+      <Button variant="gold" onClick={open}>
         Write a review
-      </button>
+      </Button>
       <dialog
         ref={dialogRef}
-        className={`review-dialog ${lux.reviewDialog}`}
+        className={`review-dialog m-auto w-[min(92vw,560px)] bg-cream p-0 text-ink backdrop:bg-ink/70 backdrop:backdrop-blur-sm`}
         aria-labelledby={formSubmitted ? "review-success-title" : "review-dialog-title"}
         onKeyDown={(event) => {
           if (event.key !== "Tab") return;
@@ -498,187 +513,191 @@ export function ReviewDialog({
           }
         }}
       >
-        <div className={lux.reviewDialogInner}>
-        <div className={lux.reviewDialogHead}>
-          <div>
-            <h3 id="review-dialog-title" className={lux.reviewDialogTitle}>
-              Write a review
-            </h3>
-            <div className={lux.reviewDialogRule} aria-hidden="true" />
-          </div>
-          <form method="dialog">
-            <button type="submit" className="modal-close-btn" aria-label="Close review dialog">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-                <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-              </svg>
-            </button>
-          </form>
-        </div>
-        {formSubmitted ? (
-          <div className="review-success-block">
-            <span className="review-success-seal" aria-hidden="true">
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </span>
-            <p role="status" id="review-success-title" className="review-success-text">Thank you — your review is published</p>
+        <div className="max-h-[86vh] overflow-y-auto p-8 md:p-10">
+          <div className="flex items-start justify-between">
+            <div>
+              <Eyebrow className="text-gold-3">
+                <Rule /> The register
+              </Eyebrow>
+              <h3 id="review-dialog-title" className="display mt-3 text-4xl">
+                Write a review
+              </h3>
+            </div>
             <form method="dialog">
-              <button type="submit" className="mk-primary-button review-success-close">
-                Close
+              <button type="submit" className="p-1 text-ink/50 transition-colors hover:text-ink" aria-label="Close review dialog">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                  <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                </svg>
               </button>
             </form>
           </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="review-form" noValidate>
-            <div className="form-group">
-              <label className="form-label" htmlFor="review-rating">
-                Rating
-              </label>
-              <div
-                className="star-rating-selector"
-                role="radiogroup"
-                aria-label="Select star rating"
-                id="review-rating"
-                onKeyDown={(event) => {
-                  if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
-                  event.preventDefault();
-                  const next =
-                    event.key === "ArrowRight"
-                      ? Math.min(5, formRating + 1)
-                      : Math.max(1, formRating - 1);
-                  setFormRating(next);
-                }}
-              >
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    key={star}
-                    type="button"
-                    role="radio"
-                    aria-checked={star === formRating}
-                    tabIndex={star === formRating ? 0 : -1}
-                    className={`star-choice-btn ${star <= formRating ? "star-active" : ""}`}
-                    onClick={() => setFormRating(star)}
-                    onKeyDown={(event) => {
-                      if (event.key !== "Enter" && event.key !== " ") return;
-                      event.preventDefault();
-                      setFormRating(star);
-                    }}
-                    aria-label={`${star} star`}
-                  >
-                    <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
-                      <path
-                        d="M12 2.6l2.9 5.9 6.5.95-4.7 4.58 1.1 6.47L12 17.44 6.2 20.5l1.1-6.47L2.6 9.45l6.5-.95z"
-                        fill={star <= formRating ? "var(--gold)" : "none"}
-                        stroke={star <= formRating ? "var(--gold)" : "var(--ink-soft)"}
-                        strokeWidth="1.4"
-                      />
-                    </svg>
-                  </button>
-                ))}
-              </div>
+          {formSubmitted ? (
+            <div className="mt-10 border-t border-ink/10 pt-10 text-center">
+              <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-gold text-gold-3" aria-hidden="true">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
+              <p role="status" id="review-success-title" className="mt-5 font-display text-2xl italic text-ink/85">
+                Thank you — your review is published
+              </p>
+              <form method="dialog" className="mt-6 flex justify-center">
+                <Button variant="ink">Close</Button>
+              </form>
             </div>
-
-            <div className="form-group">
-              <label htmlFor="form-product" className="form-label">
-                Fragrance
-              </label>
-              <select
-                id="form-product"
-                value={products.some((p) => p.slug === formProduct) ? formProduct : (products[0]?.slug ?? "")}
-                onChange={(e) => setFormProduct(e.target.value)}
-                className="form-input"
-              >
-                {products.map((p) => (
-                  <option key={p.slug} value={p.slug}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="form-row-2">
-              <div className="form-group">
-                <label htmlFor="form-name" className="form-label">
-                  Your Name
+          ) : (
+            <form onSubmit={handleSubmit} className="mt-8 space-y-5" noValidate>
+              <div>
+                <label className="eyebrow mb-2 block text-[10px] text-ink/60" htmlFor="review-rating">
+                  Rating
                 </label>
-                <input
-                  id="form-name"
-                  type="text"
-                  value={formName}
-                  onChange={(e) => setFormName(e.target.value)}
-                  className="form-input"
-                  aria-invalid={Boolean(fieldErrors.authorName)}
-                  aria-describedby={fieldErrors.authorName ? "form-name-error" : undefined}
-                />
-                {fieldErrors.authorName && (
-                  <p className="form-field-error" id="form-name-error">
-                    {fieldErrors.authorName}
-                  </p>
-                )}
+                <div
+                  className="star-rating-selector flex items-center gap-1"
+                  role="radiogroup"
+                  aria-label="Select star rating"
+                  id="review-rating"
+                  onKeyDown={(event) => {
+                    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+                    event.preventDefault();
+                    const next =
+                      event.key === "ArrowRight"
+                        ? Math.min(5, formRating + 1)
+                        : Math.max(1, formRating - 1);
+                    setFormRating(next);
+                  }}
+                >
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      role="radio"
+                      aria-checked={star === formRating}
+                      tabIndex={star === formRating ? 0 : -1}
+                      className={`star-choice-btn p-1 ${star <= formRating ? "star-active" : ""}`}
+                      onClick={() => setFormRating(star)}
+                      onKeyDown={(event) => {
+                        if (event.key !== "Enter" && event.key !== " ") return;
+                        event.preventDefault();
+                        setFormRating(star);
+                      }}
+                      aria-label={`${star} star`}
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+                        <path
+                          d="M12 2.6l2.9 5.9 6.5.95-4.7 4.58 1.1 6.47L12 17.44 6.2 20.5l1.1-6.47L2.6 9.45l6.5-.95z"
+                          fill={star <= formRating ? "var(--color-her-rose)" : "none"}
+                          stroke={star <= formRating ? "var(--color-her-rose)" : "var(--color-smoke)"}
+                          strokeWidth="1.4"
+                        />
+                      </svg>
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div className="form-group">
-                <label htmlFor="form-city" className="form-label">
-                  City
+
+              <div>
+                <label htmlFor="form-product" className="eyebrow mb-2 block text-[10px] text-ink/60">
+                  Fragrance
                 </label>
                 <select
-                  id="form-city"
-                  value={formCity}
-                  onChange={(e) => setFormCity(e.target.value)}
-                  className="form-input"
+                  id="form-product"
+                  value={products.some((p) => p.slug === formProduct) ? formProduct : (products[0]?.slug ?? "")}
+                  onChange={(e) => setFormProduct(e.target.value)}
+                  className={inputCls}
                 >
-                  {EGYPT_CITIES.map((city) => (
-                    <option key={city} value={city}>
-                      {city}
+                  {products.map((p) => (
+                    <option key={p.slug} value={p.slug}>
+                      {p.name}
                     </option>
                   ))}
                 </select>
               </div>
-            </div>
 
-            <div className="form-group">
-              <label htmlFor="form-title" className="form-label">
-                Headline
-              </label>
-              <input
-                id="form-title"
-                type="text"
-                value={formTitle}
-                onChange={(e) => setFormTitle(e.target.value)}
-                className="form-input"
-              />
-            </div>
+              <div className="grid gap-5 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="form-name" className="eyebrow mb-2 block text-[10px] text-ink/60">
+                    Your Name
+                  </label>
+                  <input
+                    id="form-name"
+                    type="text"
+                    value={formName}
+                    onChange={(e) => setFormName(e.target.value)}
+                    className={inputCls}
+                    aria-invalid={Boolean(fieldErrors.authorName)}
+                    aria-describedby={fieldErrors.authorName ? "form-name-error" : undefined}
+                  />
+                  {fieldErrors.authorName && (
+                    <p className="form-field-error mt-1.5 font-sans text-xs text-her-rose" id="form-name-error">
+                      {fieldErrors.authorName}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label htmlFor="form-city" className="eyebrow mb-2 block text-[10px] text-ink/60">
+                    City
+                  </label>
+                  <select
+                    id="form-city"
+                    value={formCity}
+                    onChange={(e) => setFormCity(e.target.value)}
+                    className={inputCls}
+                  >
+                    {EGYPT_CITIES.map((city) => (
+                      <option key={city} value={city}>
+                        {city}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
 
-            <div className="form-group">
-              <label htmlFor="form-comment" className="form-label">
-                Review
-              </label>
-              <textarea
-                id="form-comment"
-                rows={4}
-                value={formComment}
-                onChange={(e) => setFormComment(e.target.value)}
-                className="form-input form-textarea"
-                aria-invalid={Boolean(fieldErrors.comment)}
-                aria-describedby={fieldErrors.comment ? "form-comment-error" : undefined}
-              />
-              {fieldErrors.comment && (
-                <p className="form-field-error" id="form-comment-error">
-                  {fieldErrors.comment}
+              <div>
+                <label htmlFor="form-title" className="eyebrow mb-2 block text-[10px] text-ink/60">
+                  Headline
+                </label>
+                <input
+                  id="form-title"
+                  type="text"
+                  value={formTitle}
+                  onChange={(e) => setFormTitle(e.target.value)}
+                  className={inputCls}
+                />
+              </div>
+
+              <div>
+                <label htmlFor="form-comment" className="eyebrow mb-2 block text-[10px] text-ink/60">
+                  Review
+                </label>
+                <textarea
+                  id="form-comment"
+                  rows={4}
+                  value={formComment}
+                  onChange={(e) => setFormComment(e.target.value)}
+                  className={`${inputCls} form-textarea resize-y`}
+                  aria-invalid={Boolean(fieldErrors.comment)}
+                  aria-describedby={fieldErrors.comment ? "form-comment-error" : undefined}
+                />
+                {fieldErrors.comment && (
+                  <p className="form-field-error mt-1.5 font-sans text-xs text-her-rose" id="form-comment-error">
+                    {fieldErrors.comment}
+                  </p>
+                )}
+              </div>
+
+              {fieldErrors.form && (
+                <p className="form-level-error border border-her-rose/40 bg-her-deep/10 p-3 text-center font-sans text-xs text-her-ink" role="alert">
+                  {fieldErrors.form}
                 </p>
               )}
-            </div>
 
-            {fieldErrors.form && (
-              <p className="form-level-error" role="alert">
-                {fieldErrors.form}
-              </p>
-            )}
-
-            <button type="submit" disabled={submitting} className="mk-primary-button form-submit-btn">
-              {submitting ? "Submitting..." : "Submit Review"}
-            </button>
-          </form>
-        )}
+              <div className="flex justify-end pt-2">
+                <Button variant="gold" type="submit" disabled={submitting}>
+                  {submitting ? "Submitting..." : "Submit Review"}
+                </Button>
+              </div>
+            </form>
+          )}
         </div>
       </dialog>
     </>
@@ -687,20 +706,28 @@ export function ReviewDialog({
 
 export function ReviewsSection({ products }: { products: SearchProduct[] }) {
   const reviews = useReviews();
+  const { showToast } = useStore();
 
   return (
-    <section id="reviews" className={`reviews-section ${lux.scope}`} aria-labelledby="reviews-heading">
-      <div className="reviews-container">
-        <div className="reviews-header">
-          <h2 className="reviews-title" id="reviews-heading">
-            Customer reviews
-          </h2>
+    <section id="reviews" className="relative border-t border-cream/10 pb-24 pt-20 text-cream" aria-labelledby="reviews-heading">
+      <div className="mx-auto max-w-[1600px] px-5 md:px-10">
+        <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
+          <div>
+            <Eyebrow className="text-gold">
+              <Rule /> Voices of the house
+            </Eyebrow>
+            <h2 className="reviews-title display mt-4 text-4xl md:text-5xl" id="reviews-heading">
+              Customer reviews
+            </h2>
+            <p className="mt-3 hidden eyebrow text-[10px] text-cream/40 md:block">As shared with the house</p>
+          </div>
           <ReviewDialog
             products={products}
             onSubmitted={(review, stats) => {
               reviews.setReviewsList((prev) => [review, ...prev]);
               reviews.setStats(stats);
               reviews.setNewlySubmittedId(review.id);
+              showToast("Thank you — your review is published");
             }}
           />
         </div>

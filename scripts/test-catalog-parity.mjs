@@ -63,7 +63,10 @@ for (const l of live) {
     html.includes(`https://miskova.myeasyorders.com/products/${l.slug}`),
   );
 }
-check("bag controls present", html.includes("data-add") && html.includes("data-cart-open"));
+check(
+  "canonical store CTAs present, no bag",
+  html.includes("https://miskova.myeasyorders.com/products/") && !html.includes("Add to bag"),
+);
 check(
   "announcement present",
   html.includes("FREE SHIPPING FOR ANY ORDER ABOVE 1200EGP") || (html.includes("SHIPPING") && html.includes("1200")),

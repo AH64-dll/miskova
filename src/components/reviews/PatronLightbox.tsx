@@ -1,7 +1,8 @@
+"use client";
+
 import { useEffect, useState, useCallback, useRef } from "react";
 import Image from "next/image";
-import { PatronDispatch } from "@/types/reviews";
-import lux from "./luxury.module.css";
+import type { PatronDispatch } from "@/types/reviews";
 
 interface PatronLightboxProps {
   dispatch: PatronDispatch | null;
@@ -75,7 +76,7 @@ export function PatronLightbox({
   return (
     <dialog
       ref={dialogRef}
-      className={`patron-lightbox-dialog ${lux.lightbox}`}
+      className={`patron-lightbox-dialog m-auto w-[min(94vw,900px)] bg-cream p-0 text-ink backdrop:bg-ink/80 backdrop:backdrop-blur-sm`}
       aria-label={`Customer review screenshot ${dispatch.id}`}
       onKeyDown={(e) => {
         if (e.key === "Escape") {
@@ -111,12 +112,12 @@ export function PatronLightbox({
         if (e.target === dialogRef.current) dialogRef.current?.close();
       }}
     >
-      <div className="patron-lightbox-header">
-        <span className="patron-lightbox-title">{dispatch.title || "Customer Review"}</span>
-        <div className="patron-lightbox-actions">
+      <div className="patron-lightbox-header flex items-center justify-between border-b border-ink/10 px-5 py-4">
+        <span className="patron-lightbox-title eyebrow text-[10px] text-ink/60">{dispatch.title || "Customer Review"}</span>
+        <div className="patron-lightbox-actions flex items-center gap-2">
           <button
             type="button"
-            className="patron-action-btn"
+            className="patron-action-btn link-draw eyebrow text-[10px] text-ink/60 hover:text-ink"
             onClick={() => setIsZoomed((prev) => !prev)}
             aria-label={isZoomed ? "Reset zoom" : "Magnify image"}
           >
@@ -124,7 +125,7 @@ export function PatronLightbox({
           </button>
           <button
             type="button"
-            className="patron-action-btn patron-close-btn"
+            className="patron-action-btn patron-close-btn flex h-9 w-9 items-center justify-center rounded-full border border-ink/15 text-ink/60 transition-colors hover:border-ink hover:text-ink"
             onClick={() => dialogRef.current?.close()}
             aria-label="Close screenshot viewer"
           >
@@ -135,11 +136,11 @@ export function PatronLightbox({
         </div>
       </div>
 
-      <div className="patron-lightbox-body">
+      <div className="patron-lightbox-body relative flex items-stretch justify-center gap-2 bg-bone p-4">
         {onPrev && (
           <button
             type="button"
-            className="patron-nav-arrow patron-nav-arrow--prev"
+            className="patron-nav-arrow patron-nav-arrow--prev my-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-ink/15 text-ink/60 transition-colors hover:border-ink hover:text-ink disabled:opacity-30"
             onClick={onPrev}
             disabled={!hasPrev}
             aria-label="Previous screenshot"
@@ -152,7 +153,7 @@ export function PatronLightbox({
 
         <div
           ref={containerRef}
-          className={`patron-lightbox-image-stage ${isZoomed ? "is-zoomed" : ""}`}
+          className={`patron-lightbox-image-stage max-h-[78vh] overflow-hidden ${isZoomed ? "is-zoomed cursor-zoom-out" : "cursor-zoom-in"}`}
           onMouseMove={handleMouseMove}
           onClick={() => setIsZoomed((prev) => !prev)}
         >
@@ -172,7 +173,7 @@ export function PatronLightbox({
               alt={dispatch.altText}
               width={700}
               height={900}
-              className="patron-lightbox-img"
+              className="patron-lightbox-img h-auto w-full object-contain"
               sizes="(min-width: 900px) 700px, 90vw"
             />
           </div>
@@ -181,7 +182,7 @@ export function PatronLightbox({
         {onNext && (
           <button
             type="button"
-            className="patron-nav-arrow patron-nav-arrow--next"
+            className="patron-nav-arrow patron-nav-arrow--next my-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-ink/15 text-ink/60 transition-colors hover:border-ink hover:text-ink disabled:opacity-30"
             onClick={onNext}
             disabled={!hasNext}
             aria-label="Next screenshot"

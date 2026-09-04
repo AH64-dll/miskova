@@ -27,9 +27,9 @@ const SOFTBOXES: Softbox[] = [
   // Overhead jewelry key sheet
   { size: [5.2, 2.2], position: [0, 3.8, 0.4], rotation: [Math.PI * 0.5, 0, 0], color: "#fffcf5", intensity: 1.5 },
   // Luminous golden-amber liquid backlight kicker behind (internal refraction glow)
-  { size: [4.4, 4.8], position: [0.0, 0.45, -2.4], rotation: [0, Math.PI, 0], color: "#c85a28", intensity: 1.6 },
+  { size: [4.4, 4.8], position: [0.0, 0.45, -2.4], rotation: [0, Math.PI, 0], color: "#c98a3a", intensity: 1.6 },
   // Golden rim kicker at 45 degrees
-  { size: [1.8, 6.0], position: [-2.2, 1.2, -1.8], rotation: [0, Math.PI * 0.75, 0], color: "#ffd27d", intensity: 2.8 },
+  { size: [1.8, 6.0], position: [-2.2, 1.2, -1.8], rotation: [0, Math.PI * 0.75, 0], color: "#e3c98a", intensity: 2.8 },
   // Dark side contrast flags (gives glass facet reflections crisp high-contrast edges)
   { size: [1.5, 7.0], position: [-3.2, 0.6, 0.0], rotation: [0, Math.PI * 0.5, 0], color: "#080605", intensity: 0.15 },
   { size: [1.5, 7.0], position: [3.2, 0.6, 0.0], rotation: [0, -Math.PI * 0.5, 0], color: "#080605", intensity: 0.15 },
@@ -40,7 +40,7 @@ export function createStudioEnvironment(renderer: THREE.WebGLRenderer): {
   dispose: () => void;
 } {
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color("#2a2622");
+  scene.background = new THREE.Color("#141210");
 
   const disposables: Array<THREE.BufferGeometry | THREE.Material> = [];
   for (const box of SOFTBOXES) {
