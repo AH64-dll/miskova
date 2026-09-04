@@ -56,7 +56,7 @@ export default function SummerSection() {
         </div>
 
         {/* Products — staggered rhythm like light on water */}
-        <Stagger className="mt-24 grid grid-cols-2 gap-x-5 gap-y-14 md:grid-cols-3 md:gap-x-10 md:gap-y-20" delayChildren={0.1}>
+        <Stagger className="mt-24 grid grid-cols-2 gap-x-5 gap-y-14 md:grid-cols-3 md:gap-x-10 md:gap-y-20">
           {collections.summer.map((p, i) => (
             <Item key={p.slug} persona="summer" className={cn(i % 3 === 1 && "md:translate-y-16", i % 3 === 2 && "md:translate-y-6")}>
               <ProductCard product={p} persona="summer" />

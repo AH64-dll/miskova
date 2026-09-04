@@ -98,7 +98,7 @@ export default function HimSection() {
           <p className="eyebrow text-gold/70">The remaining chapters</p>
           <p className="eyebrow text-[10px] text-cream/40">{rest.length} fragrances</p>
         </div>
-        <Stagger className="mt-10 grid grid-cols-2 gap-x-5 gap-y-14 md:grid-cols-4 md:gap-x-8" delayChildren={0.07}>
+        <Stagger className="mt-10 grid grid-cols-2 gap-x-5 gap-y-14 md:grid-cols-4 md:gap-x-8">
           {rest.map((p, i) => (
             <Item key={p.slug} persona="him">
               <ProductCard product={p} persona="him" index={i + 1} />

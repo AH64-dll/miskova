@@ -79,9 +79,10 @@ export async function GET(request: Request) {
       ? store.filter((r) => r.productSlug.toLowerCase() === productSlug.toLowerCase())
       : store;
 
-  const stats = calculateReviewStats(productScoped);
+  const approved = productScoped.filter((r) => r.status === "approved");
+  const stats = calculateReviewStats(approved);
 
-  let filtered = [...productScoped];
+  let filtered = [...approved];
   if (ratingParam !== null) {
     const ratingNum = Number.parseInt(ratingParam, 10);
     if (!Number.isInteger(ratingNum) || ratingNum < 1 || ratingNum > 5) {
@@ -184,7 +185,7 @@ export async function POST(request: Request) {
       },
       validSlugs,
     );
-    const store = await getReviews();
+    const store = (await getReviews()).filter((r) => r.status === "approved");
     const stats = calculateReviewStats(store);
     return NextResponse.json(
       { success: true, message: "Review successfully submitted.", data: review, stats },

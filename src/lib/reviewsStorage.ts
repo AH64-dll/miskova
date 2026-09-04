@@ -23,7 +23,6 @@ export class ReviewStorageError extends Error {
 
 function resolveStorePath(): string {
   const override = process.env.REVIEWS_STORE_PATH;
-  console.log("resolveStorePath returns:", path.join(process.cwd(), ".data", "reviews.json"));
   if (override && override.trim()) return override;
   return path.join(process.cwd(), ".data", "reviews.json");
 }
@@ -191,6 +190,7 @@ export async function addReview(
     location,
     createdAt: new Date().toISOString(),
     helpfulCount: 0,
+    status: "approved" as const,
   };
 
   return await withFileLock(resolveStorePath(), async () => {

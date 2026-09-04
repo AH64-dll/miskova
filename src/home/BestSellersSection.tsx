@@ -51,7 +51,7 @@ function BestCard({ product, i }: { product: Product; i: number }) {
         </div>
         <Price product={product} className="shrink-0 pt-1 text-cream" />
       </div>
-      <div className="mt-5 flex items-center gap-3">
+      <div className="mt-5 flex flex-wrap items-center gap-3">
         <Button variant="gold" href={product.url} className="px-6 py-3">
           Buy on the store <Icon.Arrow className="h-3.5 w-3.5" />
         </Button>

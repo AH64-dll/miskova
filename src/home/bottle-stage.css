@@ -1,5 +1,5 @@
 /* 3D bottle stage — layout, loading, control pill, and fallback states.
-   Consumer: src/home/BottleStage.tsx (mounts inside the design hero plate). */
+   Consumer: src/home/BottleStage.tsx (mounts borderless in the design hero). */
 
 .bottleStage {
   position: absolute;
@@ -8,7 +8,6 @@
   overflow: hidden;
 }
 
-.bottleStage__fallback,
 .bottleStage__surface {
   position: absolute;
   inset: 0;
@@ -17,15 +16,55 @@
   height: 100%;
 }
 
-.bottleStage__fallback {
-  z-index: 1;
-  object-fit: contain;
-  object-position: 50% 48%;
-  opacity: 1;
-  transition: opacity 0.4s ease;
+/* In-stage typographic fallback (WebGL context failure / reduced motion).
+   Blends into the dark hero — no cream plate. */
+.bottleStage__stageFallback {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  gap: 14px;
+  place-content: center;
+  justify-items: center;
+  text-align: center;
+  padding: 24px;
+  color: #f6f1e7;
+  background: radial-gradient(58% 52% at 50% 45%, rgba(36, 29, 18, 0.85), rgba(11, 11, 12, 0) 78%);
+}
+
+.bottleStage__stageFallbackMonogram {
+  width: 132px;
+  height: 132px;
+  border: 1px solid var(--color-gold);
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-size: 60px;
+  line-height: 1;
+  color: var(--color-gold-2);
+}
+
+.bottleStage__stageFallbackWord {
+  font-family: var(--font-display);
+  font-size: clamp(28px, 6vw, 54px);
+  line-height: 1.1;
+}
+
+@media (max-width: 720px) {
+  .bottleStage__stageFallbackMonogram {
+    width: 104px;
+    height: 104px;
+    font-size: 48px;
+  }
 }
 
 .bottleStage__surface {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
   z-index: 2;
   opacity: 0;
   transition: opacity 0.4s ease;
@@ -33,10 +72,6 @@
 
 .bottleStage[data-ready="true"] .bottleStage__surface {
   opacity: 1;
-}
-
-.bottleStage[data-ready="true"] .bottleStage__fallback {
-  opacity: 0;
 }
 
 .bottleStage__loading {
@@ -53,6 +88,7 @@
   letter-spacing: 0.18em;
   text-transform: uppercase;
   transition: opacity 0.2s ease;
+  pointer-events: none;
 }
 
 .bottleStage__loading span {
@@ -74,6 +110,7 @@
   position: absolute;
   z-index: 5;
   left: 50%;
+  pointer-events: none;
   bottom: 6vh;
   transform: translateX(-50%);
   color: rgba(246, 241, 231, 0.65);

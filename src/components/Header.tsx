@@ -127,7 +127,7 @@ export default function Header() {
             className="absolute left-1/2 flex -translate-x-1/2 items-center gap-3"
             aria-label="Miskova home"
           >
-            <Monogram className="h-6 w-6 opacity-90" />
+            <Monogram className={cn("h-8 w-8", dark ? "text-gold" : "text-ink")} />
             <span className="font-display text-[1.55rem] font-medium tracking-[0.32em] leading-none">MISKOVA</span>
           </button>
 

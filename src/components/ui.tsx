@@ -70,23 +70,19 @@ export function Reveal({
   );
 }
 
-export function Stagger({ children, className, delayChildren = 0.08 }: { children: ReactNode; className?: string; delayChildren?: number }) {
-  return (
-    <motion.div
-      className={className}
-      initial="hidden"
-      whileInView="show"
-      viewport={{ once: true, amount: 0.15 }}
-      variants={{ hidden: {}, show: { transition: { staggerChildren: delayChildren } } }}
-    >
-      {children}
-    </motion.div>
-  );
+export function Stagger({ children, className }: { children: ReactNode; className?: string }) {
+  return <div className={className}>{children}</div>;
 }
 
 export function Item({ children, className, persona = "house" }: { children: ReactNode; className?: string; persona?: keyof typeof revealVariants }) {
   return (
-    <motion.div className={className} variants={revealVariants[persona]}>
+    <motion.div
+      className={className}
+      variants={revealVariants[persona]}
+      initial="hidden"
+      whileInView="show"
+      viewport={{ once: true, amount: 0.2, margin: "0px 0px -8% 0px" }}
+    >
       {children}
     </motion.div>
   );
@@ -144,7 +140,7 @@ export function Button({
   disabled?: boolean;
 }) {
   const base =
-    "group/btn relative inline-flex items-center justify-center gap-3 overflow-hidden px-7 py-3.5 font-sans text-[11px] uppercase tracking-[0.28em] transition-all duration-500 ease-[cubic-bezier(.16,1,.3,1)] disabled:opacity-40 disabled:pointer-events-none";
+    "group/btn relative inline-flex items-center justify-center gap-3 overflow-hidden whitespace-nowrap px-7 py-3.5 font-sans text-[11px] uppercase tracking-[0.28em] transition-all duration-500 ease-[cubic-bezier(.16,1,.3,1)] disabled:opacity-40 disabled:pointer-events-none";
   const styles = {
     gold: "bg-gold text-ink hover:bg-gold-2",
     ink: "bg-ink text-cream hover:bg-ink-3",
@@ -158,7 +154,7 @@ export function Button({
   const cls = cn(base, styles, className);
   const inner = (
     <>
-      <span className="relative z-10">{children}</span>
+      <span className="relative z-10 inline-flex items-center gap-3 [&>svg]:shrink-0">{children}</span>
       {!variant.startsWith("ghost") && (
         <span className="pointer-events-none absolute inset-y-0 -left-1/3 z-0 w-1/3 -skew-x-12 bg-white/20 opacity-0 transition-all duration-700 group-hover/btn:left-[120%] group-hover/btn:opacity-100" />
       )}
@@ -203,6 +199,11 @@ export const Icon = {
   Arrow: (p: { className?: string }) => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" className={p.className}>
       <path d="M4 12h15M13 6l6 6-6 6" />
+    </svg>
+  ),
+  ChevronDown: (p: { className?: string }) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" className={p.className}>
+      <path d="m6 9 6 6 6-6" />
     </svg>
   ),
   Plus: (p: { className?: string }) => (
@@ -261,10 +262,24 @@ export const Icon = {
 /* Monogram mark */
 export function Monogram({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 48 48" fill="none" className={className} aria-hidden>
-      <path d="M8 40V10l16 20 16-20v30" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
-      <path d="M24 30v10" stroke="currentColor" strokeWidth="1.3" />
-      <circle cx="24" cy="6" r="1.4" fill="currentColor" />
+    <svg viewBox="0 0 64 64" fill="none" className={className} role="img" aria-label="Miskova monogram">
+      {/* Seal: solid outer ring, fine dotted orbit, inner hairline */}
+      <circle cx="32" cy="32" r="30.6" stroke="currentColor" strokeWidth="1.6" />
+      <circle cx="32" cy="32" r="26.8" stroke="currentColor" strokeWidth="1.1" strokeDasharray="0.1 3.4" strokeLinecap="round" />
+      <circle cx="32" cy="32" r="23.4" stroke="currentColor" strokeWidth="0.7" opacity="0.55" />
+      {/* Flanking diamonds on the inner hairline */}
+      <rect x="7.8" y="31.2" width="1.6" height="1.6" transform="rotate(45 8.6 32)" fill="currentColor" />
+      <rect x="54.6" y="31.2" width="1.6" height="1.6" transform="rotate(45 55.4 32)" fill="currentColor" />
+      {/* The mark, recreated from the original logo: cap bar, secondary bar, M body */}
+      <g transform="translate(0 1.5)">
+        <rect x="22.5" y="12.4" width="19" height="3.6" rx="1.8" fill="currentColor" />
+        <rect x="26" y="18.6" width="12" height="2.4" rx="1.2" fill="currentColor" />
+        <g stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+          <path d="M20.6 46.5V28.6Q20.6 25.6 23.6 25.6H26.4" />
+          <path d="M29.6 33.5V30.8Q29.6 25.8 32 25.8Q34.4 25.8 34.4 30.9V41.5Q34.4 45.3 37.2 45.7" />
+          <path d="M43.4 46.5V28.6Q43.4 25.6 40.4 25.6H38.2" />
+        </g>
+      </g>
     </svg>
   );
 }

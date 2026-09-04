@@ -117,7 +117,7 @@ export type InteractiveSurface = {
 };
 
 export function createInteractiveSurface(floorY: number): InteractiveSurface {
-  const radius = 2.4;
+  const radius = 1.0;
   const geometry = new THREE.PlaneGeometry(radius * 2, radius * 2, 96, 96);
   geometry.rotateX(-Math.PI / 2); // Lay flat on the horizontal XZ plane
 
@@ -130,9 +130,9 @@ export function createInteractiveSurface(floorY: number): InteractiveSurface {
       uPointerEnergy: { value: 0 },
       uSprayImpulse: { value: 0 },
       uSprayOrigin: { value: new THREE.Vector2(0.2, 0.0) },
-      uColorBase: { value: new THREE.Color("#f1ebe1") },
-      uColorGlow: { value: new THREE.Color("#fef8ec") },
-      uColorDeep: { value: new THREE.Color("#18201a") },
+      uColorBase: { value: new THREE.Color("#141211") },
+      uColorGlow: { value: new THREE.Color("#86683a") },
+      uColorDeep: { value: new THREE.Color("#0b0a09") },
       uDarkTransition: { value: 0 },
       uContactOcclusion: { value: 1 },
     },

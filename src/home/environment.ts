@@ -60,7 +60,7 @@ export function createStudioEnvironment(renderer: THREE.WebGLRenderer): {
   // Floor bounce disc
   const floorGeo = new THREE.CircleGeometry(8, 32);
   const floorMat = new THREE.MeshBasicMaterial({
-    color: new THREE.Color("#7d7468"),
+    color: new THREE.Color("#1b1815"),
     side: THREE.DoubleSide,
     toneMapped: false,
   });
@@ -89,13 +89,43 @@ export function createStudioEnvironment(renderer: THREE.WebGLRenderer): {
 }
 
 /**
- * Studio cyclorama / backdrop plane.
- * Clean, flat vertical-horizontal studio sweep without warped steep curvature.
+ * Soft dark ground pool: a radial-alpha disc that fades to nothing at its rim,
+ * grounding the bottle against the page backdrop without reading as a stage
+ * card or a hard-edged floor plate. Generated once; zero per-frame allocation.
  */
-export function createBackdrop(floorY: number): THREE.BufferGeometry {
-  const width = 16;
-  const height = 12;
-  const geometry = new THREE.PlaneGeometry(width, height, 1, 1);
-  geometry.translate(0, floorY + height / 2 - 0.5, -3.2);
-  return geometry;
+export function createFloorPool(floorY: number, radius = 1.05): { mesh: THREE.Mesh; dispose: () => void } {
+  const geometry = new THREE.CircleGeometry(radius, 48);
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = 256;
+  const ctx = canvas.getContext("2d");
+  const gradient = ctx
+    ? ctx.createRadialGradient(128, 128, 0, 128, 128, 128)
+    : null;
+  if (ctx && gradient) {
+    gradient.addColorStop(0, "rgba(255, 255, 255, 0.9)");
+    gradient.addColorStop(0.5, "rgba(255, 255, 255, 0.42)");
+    gradient.addColorStop(1, "rgba(255, 255, 255, 0)");
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 256, 256);
+  }
+  const alphaMap = new THREE.CanvasTexture(canvas);
+  const material = new THREE.MeshBasicMaterial({
+    color: new THREE.Color("#060607"),
+    transparent: true,
+    alphaMap,
+    depthWrite: false,
+    toneMapped: false,
+  });
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.rotation.x = -Math.PI * 0.5;
+  mesh.position.y = floorY + 0.001;
+  return {
+    mesh,
+    dispose: () => {
+      geometry.dispose();
+      material.dispose();
+      alphaMap.dispose();
+    },
+  };
 }
+

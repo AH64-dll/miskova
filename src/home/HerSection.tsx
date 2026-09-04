@@ -80,7 +80,7 @@ export default function HerSection() {
         </div>
 
         {/* Arched gallery */}
-        <Stagger className="mt-28 grid grid-cols-2 gap-x-6 gap-y-14 md:grid-cols-3 md:gap-x-12" delayChildren={0.1}>
+        <Stagger className="mt-28 grid grid-cols-2 gap-x-6 gap-y-14 md:grid-cols-3 md:gap-x-12">
           {items.slice(1).map((p, i) => (
             <Item key={p.slug} persona="her" className={cn(i % 3 === 1 && "md:-translate-y-10")}>
               <ProductCard product={p} persona="her" aspect="aspect-[3/4]" />

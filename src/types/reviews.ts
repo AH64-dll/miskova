@@ -10,6 +10,7 @@ export type Review = {
   createdAt: string;
   helpfulCount: number;
   perfumeNotes?: string;
+  status?: "approved" | "pending";
 };
 
 export interface PatronDispatch {

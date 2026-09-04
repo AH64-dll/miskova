@@ -10,8 +10,7 @@ import { createAtomizerSpring, createCapSpring, type AtomizerSpring, type CapSpr
 import { createSpraySystem, type SpraySystem } from "./spray";
 import { createWakeField, type WakeField } from "./wake";
 import { createInteractiveSurface, type InteractiveSurface } from "./InteractiveSurface";
-import { createBackdrop, createStudioEnvironment } from "./environment";
-import backdropStyles from "./hero-backdrop.module.css";
+import { createFloorPool, createStudioEnvironment } from "./environment";
 import "./bottle-stage.css";
 import {
   clearPointer,
@@ -29,8 +28,8 @@ const CAMERA = {
   fov: 31,
   near: 0.05,
   far: 40,
-  desktop: [0.18, 0.0, 4.55] as [number, number, number],
-  compact: [0.08, 0.0, 5.80] as [number, number, number],
+  desktop: [0.18, 0.0, 4.15] as [number, number, number],
+  compact: [0.08, 0.0, 5.30] as [number, number, number],
   target: [0.06, 0.0, 0] as [number, number, number],
 };
 
@@ -71,8 +70,7 @@ function StageContents({ host, mobile, compact, reduceMotion, onReady, onFail }:
   const sweepLight = useRef<THREE.PointLight>(null);
   const burstLight = useRef<THREE.PointLight>(null);
 
-  const backdrop = useMemo(() => createBackdrop(FLOOR_Y), []);
-
+  const floorPool = useMemo(() => createFloorPool(FLOOR_Y), []);
   const rig = useMemo(() => {
     // The hero stage presents the featured chapter — label matches the caption.
     const featured = bySlug("Liquid-Gold");
@@ -91,7 +89,7 @@ function StageContents({ host, mobile, compact, reduceMotion, onReady, onFail }:
     const { bottle, spray, wake, surface } = rig;
     let environment: { texture: THREE.Texture; dispose: () => void } | null = null;
     try {
-      scene.add(bottle.root, spray.points, wake.group, surface.mesh);
+      scene.add(bottle.root, spray.points, wake.group, surface.mesh, floorPool.mesh);
       environment = createStudioEnvironment(gl);
       scene.environment = environment.texture;
       journey.ready = true;
@@ -106,21 +104,19 @@ function StageContents({ host, mobile, compact, reduceMotion, onReady, onFail }:
     }
 
     return () => {
-      scene.remove(bottle.root, spray.points, wake.group, surface.mesh);
+      scene.remove(bottle.root, spray.points, wake.group, surface.mesh, floorPool.mesh);
       scene.environment = null;
       environment?.dispose();
       bottle.dispose();
       spray.dispose();
       wake.dispose();
       surface.dispose();
+      floorPool.dispose();
       journey.ready = false;
       if (process.env.NODE_ENV !== "production" && typeof window !== "undefined") Reflect.deleteProperty(window, "__miskova");
     };
-  }, [rig, scene, gl, camera, onReady, onFail]);
+  }, [rig, scene, gl, camera, floorPool, onReady, onFail]);
 
-  useEffect(() => () => backdrop.dispose(), [backdrop]);
-
-  // --- camera framing ------------------------------------------------------
   useEffect(() => {
     const position = compact ? CAMERA.compact : CAMERA.desktop;
     camera.position.set(position[0], position[1], position[2]);
@@ -384,31 +380,23 @@ function StageContents({ host, mobile, compact, reduceMotion, onReady, onFail }:
       burstLight.current.intensity = sweep * 0.2 + burstFlash.current * 2.4 + introBloom * 0.35;
     }
 
-    // Seamless studio background
-    const background = scene.background;
-    if (background instanceof THREE.Color) {
-      background.copy(BG_BASE).lerp(BG_WARM, reveal * 0.45);
-      background.lerp(BG_NIGHT, chapters.atmosphere * 0.85);
-      background.offsetHSL(-0.012 * introBloom, 0.05 * introBloom, -0.025 * introBloom);
-      const fog = scene.fog;
-      if (fog instanceof THREE.FogExp2) fog.color.copy(background);
+    // Fog drifts with the journey mood; the canvas itself stays transparent so
+    // the hero mist shader and page texture show through around the bottle.
+    const fog = scene.fog;
+    if (fog instanceof THREE.FogExp2) {
+      fog.color.copy(BG_BASE).lerp(BG_WARM, reveal * 0.45);
+      fog.color.lerp(BG_NIGHT, chapters.atmosphere * 0.85);
+      fog.color.offsetHSL(-0.012 * introBloom, 0.05 * introBloom, -0.025 * introBloom);
     }
   });
 
   return (
     <>
-      <color attach="background" args={[BG_BASE.getHex()]} />
       <fogExp2 attach="fog" args={[BG_BASE.getHex(), 0.03]} />
-      
-      {/* Studio cyclorama backdrop */}
-      <mesh geometry={backdrop}>
-        <meshBasicMaterial color="#f0ece4" />
-      </mesh>
-
       {/* Luxury studio lighting + crystal facet glint light */}
       <directionalLight ref={keyLight} position={[-2.6, 3.2, 2.6]} color="#fff8ee" intensity={2.4} />
       <directionalLight ref={fillLight} position={[2.6, 1.8, 2.0]} color="#f4eee4" intensity={1.6} />
-      <directionalLight ref={rimLight} position={[-2.0, 1.2, -2.4]} color="#ffffff" intensity={2.8} />
+      <directionalLight ref={rimLight} position={[-2.0, 1.2, -2.4]} color="#e3c98a" intensity={2.8} />
       <directionalLight ref={glintLight} position={[0.0, 2.6, 2.2]} color="#ffffff" intensity={2.0} />
       <pointLight ref={sweepLight} color="#fff4dc" distance={3.5} decay={2} intensity={0} />
       <pointLight ref={burstLight} color="#ffdfb0" distance={2.8} decay={2} intensity={0} />
@@ -416,7 +404,7 @@ function StageContents({ host, mobile, compact, reduceMotion, onReady, onFail }:
       {/* Grounding contact shadow under heavy chamfered crystal glass base */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, FLOOR_Y + 0.002, 0]}>
         <circleGeometry args={[1.9, 48]} />
-        <meshBasicMaterial color="#221810" transparent opacity={0.18} depthWrite={false} />
+        <meshBasicMaterial color="#221810" transparent opacity={0.26} depthWrite={false} />
       </mesh>
     </>
   );
@@ -568,7 +556,7 @@ export default function BottleStage({ className = "" }: { className?: string }) 
           className="bottleStage__surface"
           frameloop={frameloop}
           dpr={mobile ? [1, 1] : [1, 1.5]}
-          gl={{ antialias: true, alpha: false, powerPreference: "high-performance" }}
+          gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
           camera={{
             fov: CAMERA.fov,
             near: CAMERA.near,
@@ -591,11 +579,11 @@ export default function BottleStage({ className = "" }: { className?: string }) 
           />
         </Canvas>
       ) : (
-        <div className={backdropStyles.stageFallback} role="status">
-          <div className={backdropStyles.monogram} aria-hidden="true">
+        <div className="bottleStage__stageFallback" role="status">
+          <div className="bottleStage__stageFallbackMonogram" aria-hidden="true">
             M
           </div>
-          <span className={backdropStyles.fallbackWord}>Miskova</span>
+          <span className="bottleStage__stageFallbackWord">Miskova</span>
         </div>
       )}
       <button

@@ -8,7 +8,10 @@ import puppeteer from "puppeteer-core";
 
 const BASE_URL = process.env.BASE_URL || "http://127.0.0.1:3111";
 const EXEC = process.env.PUPPETEER_EXECUTABLE_PATH || "/usr/bin/google-chrome-stable";
-const PORT = Number(new URL(BASE_URL).port || 3111);
+// Own-server runs bind a DEDICATED port so a dev/prod server on the default
+// port can never silently receive the suite's writes.
+const OWN_PORT = 3271;
+const OWN_BASE_URL = `http://127.0.0.1:${OWN_PORT}`;
 
 const failures = [];
 const check = (label, cond) => {
@@ -29,7 +32,7 @@ async function waitForServer(url, timeoutMs = 30000) {
 }
 
 function launchServer(storePath) {
-  return spawn("npm", ["run", "start", "--", "-p", String(PORT)], {
+  return spawn("npm", ["run", "start", "--", "-p", String(OWN_PORT)], {
     env: { ...process.env, REVIEWS_STORE_PATH: storePath },
     stdio: "pipe",
   });
@@ -41,7 +44,7 @@ async function main() {
   const storePath = path.join(tmp, "reviews.json");
   fs.writeFileSync(storePath, "[]");
   let server = external ? null : launchServer(storePath);
-  if (server) await waitForServer(`${BASE_URL}/`);
+  if (server) await waitForServer(`${OWN_BASE_URL}/`);
 
   const browser = await puppeteer.launch({
     executablePath: EXEC,
@@ -52,8 +55,13 @@ async function main() {
   try {
     const page = await browser.newPage();
     await page.setViewport({ width: 1440, height: 1000 });
-    await page.goto(`${BASE_URL}/`, { waitUntil: "domcontentloaded" });
+    await page.goto(`${OWN_BASE_URL}/`, { waitUntil: "domcontentloaded" });
     await page.waitForFunction(() => !document.querySelector(".reviews-skeleton"), { timeout: 15000 }).catch(() => {});
+    // The brand Curtain overlay (fixed, z-100) plays once per session and swallows
+    // early clicks — wait for it to leave the DOM before interacting.
+    await page
+      .waitForFunction(() => !document.querySelector("div[class*='z-[100]']"), { timeout: 8000 })
+      .catch(() => {});
 
     // Heading exact
     const h = await page.evaluate(
@@ -61,10 +69,9 @@ async function main() {
     );
     check("heading Customer reviews", h === "Customer reviews");
 
-    // Empty state (store may already hold earlier E2E submissions; accept either state)
+    // Empty state — the suite always starts from a fresh temp store with no seeds
     const wroteEmpty = await page.evaluate(() => document.body.textContent.includes("No reviews yet"));
-    const wroteCards = await page.evaluate(() => document.querySelectorAll(".review-card:not(.reviews-skeleton)").length);
-    check("empty state", wroteEmpty || wroteCards > 0);
+    check("empty state", wroteEmpty);
 
     // Scroll carousel into view with instant behavior so clicks land reliably
     await page.evaluate(() => {
@@ -129,7 +136,7 @@ async function main() {
     const emu = await browser.newPage();
     await emu.emulateMediaFeatures([{ name: "prefers-reduced-motion", value: "reduce" }]);
     await emu.setViewport({ width: 1440, height: 1000 });
-    await emu.goto(`${BASE_URL}/`, { waitUntil: "domcontentloaded" });
+    await emu.goto(`${OWN_BASE_URL}/`, { waitUntil: "domcontentloaded" });
     const r0 = await emu.evaluate(
       () => document.querySelector(".counter-current")?.textContent?.trim(),
     );
@@ -155,7 +162,7 @@ async function main() {
     // API boundaries (unique UA per run: the shared prod server rate-limits per IP+UA)
     const runUA = `miskova-e2e/${Date.now()}`;
     const post = (body, headers = { "Content-Type": "application/json", "User-Agent": runUA }) =>
-      fetch(`${BASE_URL}/api/reviews`, { method: "POST", headers, body });
+      fetch(`${OWN_BASE_URL}/api/reviews`, { method: "POST", headers, body });
     const valid = {
       authorName: "E2E Tester",
       productSlug: "Crimson-Bloom",
@@ -170,6 +177,13 @@ async function main() {
     const id = created.data?.id;
     check("uuid id", /^[0-9a-f-]{36}$/i.test(id || ""));
 
+    // Submitted review appears immediately in GET (approved by default)
+    const listed = await fetch(`${OWN_BASE_URL}/api/reviews`);
+    const listedJson = await listed.json();
+    check(
+      "submitted appears in GET",
+      listed.ok && (listedJson.data || []).some((r) => r.id === id),
+    );
     res = await post("{bad json");
     check("malformed 400", res.status === 400);
     res = await post(JSON.stringify({ ...valid, comment: "x".repeat(17000) }));
@@ -209,21 +223,21 @@ async function main() {
     check("rate limit 429 + Retry-After", limited);
 
     // GET cap
-    res = await fetch(`${BASE_URL}/api/reviews?limit=500`);
+    res = await fetch(`${OWN_BASE_URL}/api/reviews?limit=500`);
     const got = await res.json();
     check("GET limit capped", (got.data || []).length <= 50);
 
     // Helpful increment
-    res = await fetch(`${BASE_URL}/api/reviews/${id}/helpful`, { method: "POST" });
+    res = await fetch(`${OWN_BASE_URL}/api/reviews/${id}/helpful`, { method: "POST" });
     const voted = await res.json();
     check("helpful increments", res.status === 200 && voted.data?.helpfulCount === 1);
-    res = await fetch(`${BASE_URL}/api/reviews/abc/helpful`, { method: "POST" });
+    res = await fetch(`${OWN_BASE_URL}/api/reviews/abc/helpful`, { method: "POST" });
     check("helpful bad id 400", res.status === 400);
     // Helpful rate limit (20 votes per fingerprint/hour -> 21st is 429 + Retry-After)
     const voteUA = `miskova-vote-e2e/${Date.now()}`;
     let voteLimited = false;
     for (let i = 0; i < 22; i++) {
-      res = await fetch(`${BASE_URL}/api/reviews/${id}/helpful`, {
+      res = await fetch(`${OWN_BASE_URL}/api/reviews/${id}/helpful`, {
         method: "POST",
         headers: { "User-Agent": voteUA },
       });
@@ -239,7 +253,7 @@ async function main() {
       const persistedContent = fs.readFileSync(targetStore, "utf8");
       check("persists to disk store", persistedContent.includes(id));
     }
-    res = await fetch(`${BASE_URL}/api/reviews`);
+    res = await fetch(`${OWN_BASE_URL}/api/reviews`);
     const listJson = await res.json();
     check("persisted in API list", (listJson.data || []).some((r) => r.id === id));
 
@@ -249,8 +263,8 @@ async function main() {
       server.kill("SIGTERM");
       await new Promise((r) => setTimeout(r, 1500));
       server = launchServer(storePath);
-      await waitForServer(`${BASE_URL}/`);
-      res = await fetch(`${BASE_URL}/api/reviews`);
+      await waitForServer(`${OWN_BASE_URL}/`);
+      res = await fetch(`${OWN_BASE_URL}/api/reviews`);
       const after = await res.json();
       check(
         "persists across restart",

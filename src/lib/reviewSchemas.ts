@@ -11,6 +11,7 @@ export const StoredReviewSchema = z.object({
   location: z.string().max(60),
   createdAt: z.string().datetime(),
   helpfulCount: z.number().int().min(0),
+  status: z.enum(["approved", "pending"]).optional(),
 });
 
 export type StoredReview = z.infer<typeof StoredReviewSchema>;

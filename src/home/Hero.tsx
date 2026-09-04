@@ -49,9 +49,9 @@ export default function Hero() {
       <ShaderCanvas frag={MIST} className="absolute inset-0 h-full w-full mix-blend-screen opacity-90" />
       <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/20 to-ink/30" />
 
-      <div className="relative mx-auto grid min-h-[100svh] max-w-[1600px] grid-cols-1 items-center gap-10 px-6 pb-28 pt-36 md:grid-cols-12 md:px-10 md:pb-24">
+      <div className="relative mx-auto grid min-h-[100svh] max-w-[1600px] grid-cols-1 items-center gap-10 px-6 pb-28 pt-32 md:grid-cols-12 md:px-10 md:pb-16">
         {/* Copy */}
-        <motion.div style={{ y: yText, opacity }} className="md:col-span-7 lg:col-span-6">
+        <motion.div style={{ y: yText, opacity }} className="md:col-span-6">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, ease: LUX, delay: D + 0.2 }}>
             <Eyebrow className="text-gold">
               <Rule /> Maison de parfum · Cairo
@@ -89,28 +89,21 @@ export default function Hero() {
           </motion.div>
         </motion.div>
 
-        {/* Featured bottle — live 3D stage in the gold frame */}
-        <motion.div style={{ y: yPlate }} className="relative md:col-span-5 md:col-start-8 lg:col-span-5 lg:col-start-8">
+        {/* Featured bottle — live 3D stage, blended into the page */}
+        <motion.div style={{ y: yPlate }} className="relative md:col-span-6 md:col-start-7 lg:col-span-6 lg:col-start-7">
           <motion.div
             initial={{ opacity: 0, y: 60 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1.6, ease: LUX, delay: D + 0.6 }}
             style={{ rotateX: rotX, rotateY: rotY, transformPerspective: 1400 }}
-            className="relative mx-auto w-[78%] max-w-[420px] md:w-full"
+            className="relative w-full"
           >
-            <div className="group relative block w-full">
-              {/* gold hairline frame offset */}
-              <span className="absolute -inset-3 border border-gold/30 transition-all duration-1000 ease-[cubic-bezier(.16,1,.3,1)] group-hover:-inset-4 group-hover:border-gold/60" />
-              <div className="relative aspect-[4/5] overflow-hidden bg-ink shadow-[0_60px_120px_-40px_rgba(0,0,0,0.8)]">
-                <BottleStage />
-                <span className="pointer-events-none absolute inset-0 z-[3] overflow-hidden">
-                  <span className="absolute inset-y-0 w-1/3 animate-sheen bg-gradient-to-r from-transparent via-white/50 to-transparent" />
-                </span>
-              </div>
+            <div className="relative h-[66vh] min-h-[360px] w-full md:h-[60vh] lg:h-[68vh]">
+              <BottleStage />
             </div>
 
             {/* rotating seal */}
-            <div className="absolute -left-10 -top-10 hidden h-28 w-28 md:block">
+            <div className="pointer-events-none absolute -left-8 top-6 hidden h-28 w-28 md:block">
               <svg viewBox="0 0 100 100" className="h-full w-full animate-spin-slow text-gold/80">
                 <defs>
                   <path id="circ" d="M50,50 m-38,0 a38,38 0 1,1 76,0 a38,38 0 1,1 -76,0" />
@@ -123,7 +116,7 @@ export default function Hero() {
             </div>
 
             {/* Featured context caption */}
-            <div className="mt-5 flex items-end justify-between gap-4">
+            <div className="mt-2 flex items-end justify-between gap-4">
               <div className="min-w-0">
                 <p className="eyebrow text-[10px] text-gold/70">Chapter {featured.chapter}</p>
                 <p className="mt-1 font-display text-2xl italic leading-none text-cream">{featured.name}</p>

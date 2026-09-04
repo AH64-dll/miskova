@@ -5,21 +5,31 @@ import type { CatalogProduct } from "@/data/products";
 import type { Review, ReviewStats } from "@/types/reviews";
 import { PatronCarousel } from "./reviews/PatronCarousel";
 import { useStore } from "@/components/store";
-import { Button, Eyebrow, Rule } from "@/components/ui";
+import { Button, Eyebrow, Icon, Rule } from "@/components/ui";
 
 const HELPFUL_VOTES_KEY = "miskova:helpful-votes";
 
 type SearchProduct = Pick<CatalogProduct, "name" | "slug">;
 
-function StarPips({ rating, size = 15 }: { rating: number; size?: number }) {
+function StarPips({
+  rating,
+  size = 15,
+  tone = "rose",
+}: {
+  rating: number;
+  size?: number;
+  tone?: "rose" | "gold";
+}) {
+  const fill = tone === "gold" ? "var(--color-gold)" : "var(--color-her-rose)";
+  const stroke = tone === "gold" ? "var(--color-gold-3)" : "var(--color-her-rose)";
   return (
     <span className="star-pips inline-flex items-center gap-0.5" role="img" aria-label={`${rating} out of 5 stars`}>
       {[1, 2, 3, 4, 5].map((pip) => (
         <svg key={pip} width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
           <path
             d="M12 2.6l2.9 5.9 6.5.95-4.7 4.58 1.1 6.47L12 17.44 6.2 20.5l1.1-6.47L2.6 9.45l6.5-.95z"
-            fill={pip <= rating ? "var(--color-her-rose)" : "none"}
-            stroke={pip <= rating ? "var(--color-her-rose)" : "var(--color-smoke)"}
+            fill={pip <= rating ? fill : "none"}
+            stroke={pip <= rating ? stroke : "var(--color-smoke)"}
             strokeWidth="1.4"
           />
         </svg>
@@ -164,18 +174,20 @@ export function ReviewList({
       {hasReviews && (
         <div className="mt-14 flex flex-col items-center gap-10 md:flex-row md:items-end md:justify-between">
           {/* Score */}
-          <div className="w-full max-w-sm border border-gold/20 bg-ink-2 p-8 text-center">
-            <div className="font-display text-6xl font-light leading-none text-gold-2">
+          <div className="relative w-full max-w-sm border border-gold-3/40 bg-cream p-8 text-center text-ink shadow-[0_30px_60px_-30px_rgba(0,0,0,0.7),0_0_50px_-18px_rgba(201,169,97,0.35)]">
+            <span aria-hidden="true" className="pointer-events-none absolute inset-2 border border-gold/30" />
+            <div className="relative font-display text-6xl font-light leading-none text-ink">
               {stats?.averageRating ?? "—"}
             </div>
+            <div aria-hidden="true" className="mx-auto mt-3 h-px w-16 bg-gold-3/60" />
             <div
-              className="mt-4 flex justify-center"
+              className="relative mt-4 flex justify-center"
               role="img"
               aria-label={`${stats?.averageRating} out of 5 stars`}
             >
-              <StarPips rating={stats ? Math.round(stats.averageRating) : 0} size={17} />
+              <StarPips rating={stats ? Math.round(stats.averageRating) : 0} size={17} tone="gold" />
             </div>
-            <div className="mt-4 eyebrow text-[10px] text-cream/50">
+            <div className="relative mt-4 eyebrow text-[10px] text-ink/55">
               Based on {stats?.totalReviews} {stats?.totalReviews === 1 ? "review" : "reviews"}
             </div>
           </div>
@@ -197,16 +209,16 @@ export function ReviewList({
                   }
                   title={`Filter by ${star} stars (${count} reviews)`}
                 >
-                  <span className="eyebrow w-4 text-[10px] text-cream/60">
+                  <span className={`eyebrow w-4 text-[10px] ${isSelected ? "text-gold-2" : "text-cream/60"}`}>
                     <span>{star}</span>
                   </span>
-                  <span className="relative h-px flex-1 bg-cream/15">
+                  <span className="relative h-px flex-1 bg-cream/25">
                     <span
-                      className="absolute inset-y-0 left-0 bg-gold"
+                      className="absolute inset-y-0 left-0 bg-gradient-to-r from-gold-3 via-gold to-gold-2 transition-[width] duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]"
                       style={{ width: `${percentage}%` }}
                     />
                   </span>
-                  <span className="w-6 text-right font-sans text-[11px] tabular-nums text-cream/50">
+                  <span className="w-6 text-right font-sans text-[11px] tabular-nums text-cream/75">
                     {count}
                   </span>
                 </button>
@@ -218,12 +230,12 @@ export function ReviewList({
 
       {hasReviews && (
         <div className="mt-10 flex flex-wrap items-center justify-between gap-4 border-y border-cream/10 py-4">
-          <div>
+          <div className="relative">
             <select
               aria-label="Filter reviews by fragrance"
               value={selectedProduct}
               onChange={(e) => setSelectedProduct(e.target.value)}
-              className="border border-gold/20 bg-ink-2 px-3 py-2 font-sans text-xs text-cream focus:outline-none"
+              className="w-full appearance-none border border-gold/20 bg-ink-2 py-2 pl-3 pr-9 font-sans text-xs text-cream focus:outline-none"
             >
               <option value="all">All Fragrances ({reviewsList.length})</option>
               {products.map((p) => (
@@ -232,19 +244,23 @@ export function ReviewList({
                 </option>
               ))}
             </select>
+            <Icon.ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gold/70" />
           </div>
           <div className="flex items-center gap-3">
             <span className="eyebrow text-[10px] text-cream/40">Sort by:</span>
-            <select
-              aria-label="Sort reviews by criteria"
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="border border-gold/20 bg-ink-2 px-3 py-2 font-sans text-xs text-cream focus:outline-none"
-            >
-              <option value="newest">Most Recent</option>
-              <option value="highest">Highest Rated</option>
-              <option value="helpful">Most Helpful</option>
-            </select>
+            <div className="relative">
+              <select
+                aria-label="Sort reviews by criteria"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="appearance-none border border-gold/20 bg-ink-2 py-2 pl-3 pr-9 font-sans text-xs text-cream focus:outline-none"
+              >
+                <option value="newest">Most Recent</option>
+                <option value="highest">Highest Rated</option>
+                <option value="helpful">Most Helpful</option>
+              </select>
+              <Icon.ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gold/70" />
+            </div>
           </div>
         </div>
       )}
@@ -272,16 +288,24 @@ export function ReviewList({
           ))}
         </div>
       ) : reviewsList.length === 0 ? (
-        <div className="mt-12 border border-cream/10 bg-ink-2 p-12 text-center">
-          <p className="font-display text-2xl font-light italic text-cream/80">No reviews yet</p>
-          <div className="mt-6 flex justify-center">
+        <div className="mt-12 border border-gold/20 bg-ink-2/70 px-8 py-16 text-center">
+          <div className="flex items-center justify-center gap-4 text-gold/70" aria-hidden="true">
+            <span className="h-px w-16 bg-gold/40" />
+            <svg width="9" height="9" viewBox="0 0 10 10">
+              <rect x="2.2" y="2.2" width="5.6" height="5.6" transform="rotate(45 5 5)" fill="none" stroke="currentColor" strokeWidth="1" />
+            </svg>
+            <span className="h-px w-16 bg-gold/40" />
+          </div>
+          <p className="mt-7 font-display text-2xl font-light italic text-cream/85">No reviews yet</p>
+          <p className="mt-3 eyebrow text-[10px] text-cream/45">Your verdict completes the chapter</p>
+          <div className="mt-8 flex justify-center">
             <Button variant="gold" onClick={onWrite}>
               Write a review
             </Button>
           </div>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="mt-12 border border-cream/10 bg-ink-2 p-12 text-center">
+        <div className="mt-12 border border-gold/20 bg-ink-2/70 p-12 text-center">
           <p className="font-sans text-sm text-cream/70">No reviews match your selected filters.</p>
           <button
             type="button"
@@ -306,8 +330,9 @@ export function ReviewList({
               <article
                 key={rev.id}
                 id={`review-${rev.id}`}
-                className={`review-card bg-cream p-6 pb-7 text-ink shadow-[0_40px_60px_-30px_rgba(0,0,0,0.8)] ${isNewlyAdded ? "ring-1 ring-gold" : ""}`}
+                className={`review-card relative bg-cream p-7 pb-8 text-ink shadow-[0_40px_60px_-30px_rgba(0,0,0,0.8)] ${isNewlyAdded ? "ring-1 ring-gold" : ""}`}
               >
+                <span aria-hidden="true" className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-gold-3/70 via-gold/40 to-transparent" />
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="flex items-baseline gap-2">
@@ -322,20 +347,20 @@ export function ReviewList({
                 </div>
 
                 {matchedProduct && (
-                  <div className="mt-4 inline-block bg-ink px-2 py-1">
-                    <span className="eyebrow text-[9px] text-cream/80">{matchedProduct.name}</span>
+                  <div className="mt-4 inline-block border border-gold-3/40 px-2 py-1">
+                    <span className="eyebrow text-[9px] text-gold-3">{matchedProduct.name}</span>
                   </div>
                 )}
 
-                <div className="mt-4">
+                <div className="mt-5">
                   <h3 className="font-display text-xl leading-snug">{rev.title}</h3>
                   <p className="mt-2 font-sans text-[13px] font-light leading-relaxed text-ink/75">{rev.comment}</p>
                 </div>
 
-                <div className="mt-5 flex justify-end border-t border-ink/10 pt-3">
+                <div className="mt-6 flex justify-end border-t border-ink/15 pt-4">
                   <button
                     type="button"
-                    className={`link-draw eyebrow text-[9px] ${isVoted ? "text-her-rose" : "text-ink/60 hover:text-ink"}`}
+                    className={`link-draw eyebrow text-[9px] ${isVoted ? "text-her-rose" : "text-ink/55 hover:text-gold-3"}`}
                     onClick={() => handleHelpful(rev.id)}
                     disabled={isVoted}
                     aria-label={`Mark review by ${rev.authorName} as helpful. Currently ${rev.helpfulCount} helpful votes.`}
@@ -490,7 +515,7 @@ export function ReviewDialog({
       </Button>
       <dialog
         ref={dialogRef}
-        className={`review-dialog m-auto w-[min(92vw,560px)] bg-cream p-0 text-ink backdrop:bg-ink/70 backdrop:backdrop-blur-sm`}
+        className="review-dialog m-auto w-[min(92vw,560px)] border border-gold-3/30 bg-cream p-0 text-ink shadow-[0_60px_120px_-40px_rgba(0,0,0,0.85)] backdrop:bg-ink/80 backdrop:backdrop-blur-sm"
         aria-labelledby={formSubmitted ? "review-success-title" : "review-dialog-title"}
         onKeyDown={(event) => {
           if (event.key !== "Tab") return;
@@ -513,7 +538,8 @@ export function ReviewDialog({
           }
         }}
       >
-        <div className="max-h-[86vh] overflow-y-auto p-8 md:p-10">
+        <div className="relative max-h-[86vh] overflow-y-auto p-8 md:p-10">
+          <span aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-gold/60 to-transparent" />
           <div className="flex items-start justify-between">
             <div>
               <Eyebrow className="text-gold-3">
@@ -599,18 +625,21 @@ export function ReviewDialog({
                 <label htmlFor="form-product" className="eyebrow mb-2 block text-[10px] text-ink/60">
                   Fragrance
                 </label>
-                <select
-                  id="form-product"
-                  value={products.some((p) => p.slug === formProduct) ? formProduct : (products[0]?.slug ?? "")}
-                  onChange={(e) => setFormProduct(e.target.value)}
-                  className={inputCls}
-                >
-                  {products.map((p) => (
-                    <option key={p.slug} value={p.slug}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <select
+                    id="form-product"
+                    value={products.some((p) => p.slug === formProduct) ? formProduct : (products[0]?.slug ?? "")}
+                    onChange={(e) => setFormProduct(e.target.value)}
+                    className={`${inputCls} cursor-pointer appearance-none pr-9`}
+                  >
+                    {products.map((p) => (
+                      <option key={p.slug} value={p.slug}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+                  <Icon.ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ink/40" />
+                </div>
               </div>
 
               <div className="grid gap-5 sm:grid-cols-2">
@@ -637,18 +666,21 @@ export function ReviewDialog({
                   <label htmlFor="form-city" className="eyebrow mb-2 block text-[10px] text-ink/60">
                     City
                   </label>
-                  <select
-                    id="form-city"
-                    value={formCity}
-                    onChange={(e) => setFormCity(e.target.value)}
-                    className={inputCls}
-                  >
-                    {EGYPT_CITIES.map((city) => (
-                      <option key={city} value={city}>
-                        {city}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <select
+                      id="form-city"
+                      value={formCity}
+                      onChange={(e) => setFormCity(e.target.value)}
+                      className={`${inputCls} cursor-pointer appearance-none pr-9`}
+                    >
+                      {EGYPT_CITIES.map((city) => (
+                        <option key={city} value={city}>
+                          {city}
+                        </option>
+                      ))}
+                    </select>
+                    <Icon.ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ink/40" />
+                  </div>
                 </div>
               </div>
 
@@ -674,7 +706,7 @@ export function ReviewDialog({
                   rows={4}
                   value={formComment}
                   onChange={(e) => setFormComment(e.target.value)}
-                  className={`${inputCls} form-textarea resize-y`}
+                  className={`${inputCls} form-textarea resize-none`}
                   aria-invalid={Boolean(fieldErrors.comment)}
                   aria-describedby={fieldErrors.comment ? "form-comment-error" : undefined}
                 />
@@ -709,8 +741,14 @@ export function ReviewsSection({ products }: { products: SearchProduct[] }) {
   const { showToast } = useStore();
 
   return (
-    <section id="reviews" className="relative border-t border-cream/10 pb-24 pt-20 text-cream" aria-labelledby="reviews-heading">
-      <div className="mx-auto max-w-[1600px] px-5 md:px-10">
+    <section id="reviews" className="grain relative overflow-hidden border-t border-cream/10 pb-24 pt-20 text-cream" aria-labelledby="reviews-heading">
+      {/* Warm umber band texture — consistent with the house's dark bands */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(70%_55%_at_15%_8%,rgba(201,169,97,0.14),transparent_62%),radial-gradient(55%_45%_at_88%_88%,rgba(140,107,47,0.18),transparent_62%),radial-gradient(45%_40%_at_58%_45%,rgba(180,83,106,0.06),transparent_65%)]"
+      />
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold/70 to-transparent" />
+      <div className="relative mx-auto max-w-[1600px] px-5 md:px-10">
         <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
           <div>
             <Eyebrow className="text-gold">
