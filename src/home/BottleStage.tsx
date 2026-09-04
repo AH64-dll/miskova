@@ -1,0 +1,614 @@
+"use client";
+
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import * as THREE from "three";
+import { buildMiskovaBottle, FLOOR_Y, type MiskovaBottle } from "./bottle/bottleModel";
+import { createFluidPhysics, type FluidPhysics } from "./bottle/fluidPhysics";
+import { createAtomizerSpring, createCapSpring, type AtomizerSpring, type CapSpring } from "./springs";
+import { createSpraySystem, type SpraySystem } from "./spray";
+import { createWakeField, type WakeField } from "./wake";
+import { createInteractiveSurface, type InteractiveSurface } from "./InteractiveSurface";
+import { createBackdrop, createStudioEnvironment } from "./environment";
+import backdropStyles from "./hero-backdrop.module.css";
+import {
+  clearPointer,
+  clamp,
+  computeChapters,
+  journey,
+  liftCap,
+  pressAtomizer,
+  setLabel,
+  setPointer,
+  smoothstep,
+} from "./journeyStore";
+
+const CAMERA = {
+  fov: 31,
+  near: 0.05,
+  far: 40,
+  desktop: [0.18, 0.0, 4.55] as [number, number, number],
+  compact: [0.08, 0.0, 5.80] as [number, number, number],
+  target: [0.06, 0.0, 0] as [number, number, number],
+};
+
+const POINTER_PARALLAX = { rotationX: 0.012, rotationY: 0.022, positionX: 0.022, positionY: 0.012 };
+
+const BG_BASE = new THREE.Color("#f4f1e9");
+const BG_WARM = new THREE.Color("#efe3cb");
+const BG_NIGHT = new THREE.Color("#141a13");
+
+function isDescendant(object: THREE.Object3D, ancestor: THREE.Object3D): boolean {
+  let node: THREE.Object3D | null = object;
+  while (node) {
+    if (node === ancestor) return true;
+    node = node.parent;
+  }
+  return false;
+}
+
+type StageContentsProps = {
+  host: HTMLElement | null;
+  mobile: boolean;
+  compact: boolean;
+  reduceMotion: boolean;
+  onReady: () => void;
+  onFail: (error: unknown) => void;
+};
+
+function StageContents({ host, mobile, compact, reduceMotion, onReady, onFail }: StageContentsProps) {
+  const gl = useThree((state) => state.gl);
+  const scene = useThree((state) => state.scene);
+  const camera = useThree((state) => state.camera);
+  const invalidate = useThree((state) => state.invalidate);
+
+  const keyLight = useRef<THREE.DirectionalLight>(null);
+  const fillLight = useRef<THREE.DirectionalLight>(null);
+  const rimLight = useRef<THREE.DirectionalLight>(null);
+  const glintLight = useRef<THREE.DirectionalLight>(null);
+  const sweepLight = useRef<THREE.PointLight>(null);
+  const burstLight = useRef<THREE.PointLight>(null);
+
+  const backdrop = useMemo(() => createBackdrop(FLOOR_Y), []);
+
+  const rig = useMemo(() => {
+    const bottle = buildMiskovaBottle();
+    const spray = createSpraySystem(mobile, gl.getPixelRatio());
+    const wake = createWakeField(mobile);
+    const surface = createInteractiveSurface(FLOOR_Y);
+    const capSpring = createCapSpring(bottle.cap, bottle.unit);
+    const atomizer = createAtomizerSpring(bottle.push, bottle.unit);
+    const fluid = createFluidPhysics();
+    return { bottle, spray, wake, surface, capSpring, atomizer, fluid };
+  }, [mobile, gl]);
+
+  // --- scene assembly, environment probe, disposal -------------------------
+  useEffect(() => {
+    const { bottle, spray, wake, surface } = rig;
+    let environment: { texture: THREE.Texture; dispose: () => void } | null = null;
+    try {
+      scene.add(bottle.root, spray.points, wake.group, surface.mesh);
+      environment = createStudioEnvironment(gl);
+      scene.environment = environment.texture;
+      journey.ready = true;
+      journey.failed = false;
+      onReady();
+      if (process.env.NODE_ENV !== "production" && typeof window !== "undefined") {
+        Reflect.set(window, "__miskova", { ...rig, scene, gl, camera, THREE });
+      }
+    } catch (error) {
+      journey.failed = true;
+      onFail(error);
+    }
+
+    return () => {
+      scene.remove(bottle.root, spray.points, wake.group, surface.mesh);
+      scene.environment = null;
+      environment?.dispose();
+      bottle.dispose();
+      spray.dispose();
+      wake.dispose();
+      surface.dispose();
+      journey.ready = false;
+      if (process.env.NODE_ENV !== "production" && typeof window !== "undefined") Reflect.deleteProperty(window, "__miskova");
+    };
+  }, [rig, scene, gl, camera, onReady, onFail]);
+
+  useEffect(() => () => backdrop.dispose(), [backdrop]);
+
+  // --- camera framing ------------------------------------------------------
+  useEffect(() => {
+    const position = compact ? CAMERA.compact : CAMERA.desktop;
+    camera.position.set(position[0], position[1], position[2]);
+    camera.lookAt(CAMERA.target[0], CAMERA.target[1], CAMERA.target[2]);
+    invalidate();
+  }, [camera, compact, invalidate]);
+
+  // --- pointer parallax + mesh picking -------------------------------------
+  useEffect(() => {
+    if (!host) return;
+    const canvas = gl.domElement;
+
+    let interactionRaf: number | null = null;
+    const triggerInteractionLoop = (durationMs = 1200) => {
+      if (interactionRaf !== null) {
+        cancelAnimationFrame(interactionRaf);
+      }
+      const start = performance.now();
+      const step = () => {
+        invalidate();
+        if (performance.now() - start < durationMs) {
+          interactionRaf = requestAnimationFrame(step);
+        } else {
+          interactionRaf = null;
+        }
+      };
+      step();
+    };
+
+    const handleMove = (event: PointerEvent) => {
+      if (reduceMotion || event.pointerType === "touch") return;
+      const rect = host.getBoundingClientRect();
+      setPointer(
+        ((event.clientX - rect.left) / rect.width - 0.5) * 2,
+        ((event.clientY - rect.top) / rect.height - 0.5) * 2,
+      );
+      invalidate();
+    };
+    const handleLeave = () => {
+      clearPointer();
+      invalidate();
+    };
+
+    const raycaster = new THREE.Raycaster();
+    const ndc = new THREE.Vector2();
+    const handleDown = (event: PointerEvent) => {
+      const { bottle, capSpring, atomizer } = rig;
+      const rect = canvas.getBoundingClientRect();
+      ndc.set(
+        ((event.clientX - rect.left) / rect.width) * 2 - 1,
+        -(((event.clientY - rect.top) / rect.height) * 2 - 1),
+      );
+      raycaster.setFromCamera(ndc, camera);
+      const hit = raycaster.intersectObjects([bottle.push, bottle.cap, bottle.glass], true)[0]?.object;
+      if (!hit) return;
+      if (capSpring.progress < 0.78) {
+        liftCap();
+        triggerInteractionLoop();
+      } else if (hit === bottle.push || isDescendant(hit, bottle.collar)) {
+        if (reduceMotion) pressAtomizer();
+        else atomizer.press();
+        triggerInteractionLoop();
+      } else {
+        invalidate();
+      }
+    };
+
+    host.addEventListener("pointermove", handleMove, { passive: true });
+    host.addEventListener("pointerleave", handleLeave);
+    canvas.addEventListener("pointerdown", handleDown);
+    return () => {
+      if (interactionRaf !== null) {
+        cancelAnimationFrame(interactionRaf);
+      }
+      host.removeEventListener("pointermove", handleMove);
+      host.removeEventListener("pointerleave", handleLeave);
+      canvas.removeEventListener("pointerdown", handleDown);
+    };
+  }, [host, gl, camera, rig, reduceMotion, invalidate]);
+
+  // --- frame loop ----------------------------------------------------------
+  const scratchOrigin = useMemo(() => new THREE.Vector3(), []);
+  const scratchDirection = useMemo(() => new THREE.Vector3(), []);
+  const scratchPoint = useMemo(() => new THREE.Vector3(), []);
+  const last = useRef(performance.now());
+  const lastDpr = useRef(gl.getPixelRatio());
+  const introTime = useRef(0);
+  const burstFlash = useRef(0);
+  const scentLevel = useRef(0);
+  const wakeEnergy = useRef(0);
+  const lastPointer = useRef({ x: 0, y: 0 });
+  const smoothPointer = useRef({ x: 0, y: 0 });
+  const smoothProgress = useRef(0);
+  const velocity = useRef({ x: 0, y: 0 });
+
+  useFrame(() => {
+    const { bottle, spray, wake, surface, capSpring, atomizer, fluid } = rig;
+    const now = performance.now();
+    const dt = reduceMotion ? 0 : Math.min(0.05, Math.max(0.001, (now - last.current) / 1000));
+    last.current = now;
+
+    const dpr = gl.getPixelRatio();
+    if (dpr !== lastDpr.current) {
+      lastDpr.current = dpr;
+      spray.setPixelRatio(dpr);
+    }
+
+    const damping = 1 - Math.pow(8e-4, dt);
+    smoothPointer.current.x += (journey.pointerTargetX - smoothPointer.current.x) * damping;
+    smoothPointer.current.y += (journey.pointerTargetY - smoothPointer.current.y) * damping;
+    smoothProgress.current += (journey.rawProgress - smoothProgress.current) * damping * 0.72;
+
+    if (dt > 0) {
+      velocity.current.x +=
+        ((smoothPointer.current.x - lastPointer.current.x) / dt - velocity.current.x) * damping * 0.25;
+      velocity.current.y +=
+        ((smoothPointer.current.y - lastPointer.current.y) / dt - velocity.current.y) * damping * 0.25;
+      velocity.current.x *= Math.pow(0.08, dt);
+      velocity.current.y *= Math.pow(0.08, dt);
+    }
+    lastPointer.current.x = smoothPointer.current.x;
+    lastPointer.current.y = smoothPointer.current.y;
+
+    const chapters = computeChapters(smoothProgress.current);
+
+    // Intro glint
+    introTime.current += dt;
+    const introBloom = smoothstep(0.18, 0.72, introTime.current) * (1 - smoothstep(1.05, 2.35, introTime.current));
+    const introProgress = clamp((introTime.current - 0.18) / 1.9, 0, 1);
+
+    const swing = smoothstep(0.08, 0.48, chapters.progress) * 0.17 - smoothstep(0.5, 0.94, chapters.progress) * 0.23;
+    const root = bottle.root;
+    root.rotation.x = smoothPointer.current.y * POINTER_PARALLAX.rotationX;
+    root.rotation.y = swing - smoothPointer.current.x * POINTER_PARALLAX.rotationY;
+    root.rotation.z = Math.sin(chapters.progress * Math.PI) * -0.008;
+    root.position.x = smoothPointer.current.x * POINTER_PARALLAX.positionX + swing * 0.06;
+    root.position.y = -smoothPointer.current.y * POINTER_PARALLAX.positionY;
+
+    // Material sweep along the body facets
+    const sweepCenter = 0.35 + smoothstep(0.20, 0.75, chapters.progress) * 0.40;
+    const sweepStrength = Math.max(chapters.materialSweep * 0.95, introBloom * 0.48);
+    const sweepUniforms = bottle.materials.glass.userData.sweep;
+    if (sweepUniforms) {
+      sweepUniforms.uSweepCenter.value = sweepCenter;
+      sweepUniforms.uSweepStrength.value = sweepStrength;
+      sweepUniforms.uSweepPhase.value = now * 0.0018 + chapters.progress * 8;
+      sweepUniforms.uSweepBloom.value = introBloom;
+    }
+
+    // Cap spring controller
+    const capTarget = Math.max(chapters.capOpen, journey.capForced ? 1 : 0);
+    capSpring.setTarget(capTarget, reduceMotion);
+    capSpring.update(dt);
+    setLabel(
+      capSpring.progress < 0.78 ? "Lift the cap" : "Press the atomizer",
+      capSpring.progress < 0.78 ? "cap" : "atomizer",
+    );
+
+    // Atomizer mechanism + Spray Plume
+    if (journey.pressRequested) {
+      journey.pressRequested = false;
+      if (reduceMotion) {
+        scentLevel.current = Math.max(scentLevel.current, 0.85);
+        surface.triggerSprayImpulse();
+        fluid.triggerSprayImpulse();
+      } else {
+        atomizer.press();
+      }
+    }
+    atomizer.update(dt);
+    if (atomizer.consumeBurst()) {
+      burstFlash.current = 1.0;
+      introTime.current = 0;
+      scentLevel.current = 0.88;
+      surface.triggerSprayImpulse();
+      fluid.triggerSprayImpulse();
+      scene.updateMatrixWorld(true);
+      bottle.aim.getWorldPosition(scratchOrigin);
+      scratchDirection.set(1.0, -0.12, 0.08).transformDirection(bottle.aim.matrixWorld).normalize();
+      spray.emit(scratchOrigin, scratchDirection);
+    }
+    burstFlash.current *= Math.pow(0.045, dt);
+    scentLevel.current = Math.max(chapters.fieldEnergy * 0.58, scentLevel.current * Math.exp(-0.19 * dt));
+    wakeEnergy.current += (scentLevel.current - wakeEnergy.current) * (1 - Math.pow(0.018, dt));
+    const wakeIntensity = clamp(wakeEnergy.current + chapters.atmosphere * 0.2 + introBloom * 0.2, 0, 1);
+
+    const pointerSpeed = Math.sqrt(velocity.current.x * velocity.current.x + velocity.current.y * velocity.current.y);
+
+    // Fluid slosh physics simulation (inertia from mouse velocity + rotation + tilt)
+    const externalAccX = velocity.current.x * 0.07;
+    const externalAccZ = velocity.current.y * 0.07;
+    fluid.update(dt, externalAccX, externalAccZ, root.rotation.x, root.rotation.y);
+    const sloshUniforms = bottle.materials.juice.userData.slosh;
+    if (sloshUniforms) {
+      const fluidState = fluid.getState();
+      sloshUniforms.uSloshX.value = fluidState.sloshAngleX;
+      sloshUniforms.uSloshZ.value = fluidState.sloshAngleZ;
+      sloshUniforms.uSloshPhase.value = fluidState.wavePhase;
+      sloshUniforms.uSloshEnergy.value = reduceMotion ? 0 : fluidState.energy;
+    }
+
+    // Update the reactive platform surface with physical ripples
+    surface.update({
+      time: now * 0.001,
+      delta: dt,
+      pointerX: smoothPointer.current.x,
+      pointerY: smoothPointer.current.y,
+      pointerVelocity: pointerSpeed,
+      sprayActive: burstFlash.current > 0.05,
+      darkProgress: chapters.atmosphere,
+    });
+    spray.update({
+      time: now * 0.001,
+      delta: dt,
+      pointerVelocityX: clamp(velocity.current.x, -12, 12),
+      pointerVelocityY: clamp(velocity.current.y, -12, 12),
+    });
+
+    wake.update({
+      time: reduceMotion ? 2.4 : now * 0.001,
+      energy: wakeIntensity,
+      absorption: chapters.atmosphere,
+      bloom: introBloom,
+      bloomProgress: introProgress,
+      pointerX: smoothPointer.current.x,
+      pointerY: smoothPointer.current.y,
+      velocityX: clamp(velocity.current.x, -12, 12),
+      velocityY: clamp(velocity.current.y, -12, 12),
+    });
+
+    // Soft Luxury Studio Lighting
+    const reveal = 1 - chapters.product;
+    const sweep = chapters.materialSweep;
+    const travel = smoothstep(0.04, 0.96, chapters.progress);
+
+    if (keyLight.current) {
+      keyLight.current.position.set(-2.8 + travel * 0.5, 3.8 + travel * 0.2, 2.8 - travel * 0.4);
+      keyLight.current.intensity = 2.2 + reveal * 0.4 - chapters.atmosphere * 0.6;
+    }
+    if (fillLight.current) {
+      fillLight.current.position.set(2.4 - travel * 0.4, 1.4 + Math.sin(travel * Math.PI) * 0.2, 1.8);
+      fillLight.current.intensity = 1.4 + reveal * 0.3 - chapters.atmosphere * 0.4;
+    }
+    if (rimLight.current) {
+      rimLight.current.position.set(-2.2 + Math.sin(travel * Math.PI * 0.8) * 0.4, 1.2, -2.2);
+      rimLight.current.intensity = 2.6 + reveal * 0.5;
+    }
+    if (glintLight.current) {
+      glintLight.current.position.set(0.25 + Math.sin(travel * Math.PI * 1.2) * 0.3, 3.2, 0.5);
+      glintLight.current.intensity = 1.6 + reveal * 0.4;
+    }
+    if (sweepLight.current) {
+      bottle.body.localToWorld(scratchPoint.set(0, sweepCenter * bottle.glassLocalHeight, 0.1));
+      scratchPoint.y = Math.max(scratchPoint.y, FLOOR_Y + 0.35);
+      sweepLight.current.position.copy(scratchPoint);
+      sweepLight.current.intensity = sweep * 0.75 + introBloom * 1.2;
+    }
+    if (burstLight.current) {
+      bottle.aim.getWorldPosition(scratchPoint);
+      burstLight.current.position.copy(scratchPoint);
+      burstLight.current.intensity = sweep * 0.2 + burstFlash.current * 2.4 + introBloom * 0.35;
+    }
+
+    // Seamless studio background
+    const background = scene.background;
+    if (background instanceof THREE.Color) {
+      background.copy(BG_BASE).lerp(BG_WARM, reveal * 0.45);
+      background.lerp(BG_NIGHT, chapters.atmosphere * 0.85);
+      background.offsetHSL(-0.012 * introBloom, 0.05 * introBloom, -0.025 * introBloom);
+      const fog = scene.fog;
+      if (fog instanceof THREE.FogExp2) fog.color.copy(background);
+    }
+  });
+
+  return (
+    <>
+      <color attach="background" args={[BG_BASE.getHex()]} />
+      <fogExp2 attach="fog" args={[BG_BASE.getHex(), 0.03]} />
+      
+      {/* Studio cyclorama backdrop */}
+      <mesh geometry={backdrop}>
+        <meshBasicMaterial color="#f0ece4" />
+      </mesh>
+
+      {/* Luxury studio lighting + crystal facet glint light */}
+      <directionalLight ref={keyLight} position={[-2.6, 3.2, 2.6]} color="#fff8ee" intensity={2.4} />
+      <directionalLight ref={fillLight} position={[2.6, 1.8, 2.0]} color="#f4eee4" intensity={1.6} />
+      <directionalLight ref={rimLight} position={[-2.0, 1.2, -2.4]} color="#ffffff" intensity={2.8} />
+      <directionalLight ref={glintLight} position={[0.0, 2.6, 2.2]} color="#ffffff" intensity={2.0} />
+      <pointLight ref={sweepLight} color="#fff4dc" distance={3.5} decay={2} intensity={0} />
+      <pointLight ref={burstLight} color="#ffdfb0" distance={2.8} decay={2} intensity={0} />
+
+      {/* Grounding contact shadow under heavy chamfered crystal glass base */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, FLOOR_Y + 0.002, 0]}>
+        <circleGeometry args={[1.9, 48]} />
+        <meshBasicMaterial color="#221810" transparent opacity={0.18} depthWrite={false} />
+      </mesh>
+    </>
+  );
+}
+
+/**
+ * The luxury interactive 3D hero stage.
+ */
+export default function BottleStage({ className = "" }: { className?: string }) {
+  const hostRef = useRef<HTMLDivElement>(null);
+  const [host, setHost] = useState<HTMLDivElement | null>(null);
+  const [mobile, setMobile] = useState(false);
+  const [compact, setCompact] = useState(false);
+  const [reduceMotion, setReduceMotion] = useState(false);
+  const [visible, setVisible] = useState(true);
+  const [webglAllowed, setWebglAllowed] = useState(true);
+  const [control, setControl] = useState({ label: "Preparing the bottle", state: "loading" });
+  const [ready, setReady] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const invalidateRef = useRef<() => void>(() => {});
+
+  useEffect(() => setHost(hostRef.current), []);
+
+  useEffect(() => {
+    const mobileQuery = window.matchMedia("(max-width: 720px)");
+    const compactQuery = window.matchMedia("(max-width: 1024px)");
+    const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const sync = () => {
+      setMobile(mobileQuery.matches);
+      setCompact(compactQuery.matches);
+      setReduceMotion(motionQuery.matches);
+      const saveData =
+        (navigator as Navigator & { connection?: { saveData?: boolean } }).connection
+          ?.saveData === true;
+      const narrow = window.innerWidth < 360;
+      let noWebGL = false;
+      try {
+        const canvas = document.createElement("canvas");
+        noWebGL = !canvas.getContext("webgl2") && !canvas.getContext("webgl");
+      } catch {
+        noWebGL = true;
+      }
+      setWebglAllowed(!motionQuery.matches && !saveData && !narrow && !noWebGL);
+    };
+    sync();
+    mobileQuery.addEventListener("change", sync);
+    compactQuery.addEventListener("change", sync);
+    motionQuery.addEventListener("change", sync);
+    window.addEventListener("resize", sync);
+    return () => {
+      mobileQuery.removeEventListener("change", sync);
+      compactQuery.removeEventListener("change", sync);
+      motionQuery.removeEventListener("change", sync);
+      window.removeEventListener("resize", sync);
+    };
+  }, []);
+  useEffect(() => {
+    journey.onLabel = (label, state) => setControl({ label, state });
+    return () => {
+      journey.onLabel = null;
+    };
+  }, []);
+  // Eager first-paint mount: the canvas renders immediately on load (LCP hit
+  // accepted). Only the render loop pauses when the stage is offscreen or the
+  // tab is hidden, so no WebGL work runs after the hero leaves the viewport.
+  useEffect(() => {
+    const node = hostRef.current;
+    if (!node) return;
+    let onScreen = true;
+    const publish = () => setVisible(onScreen && !document.hidden);
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        onScreen = entry?.isIntersecting ?? true;
+        publish();
+      },
+      { rootMargin: "240px" },
+    );
+    observer.observe(node);
+    document.addEventListener("visibilitychange", publish);
+    return () => {
+      observer.disconnect();
+      document.removeEventListener("visibilitychange", publish);
+    };
+  }, [host]);
+
+  useEffect(() => {
+    if (!reduceMotion && !mobile) return;
+    const onScroll = () => invalidateRef.current();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [reduceMotion, mobile]);
+
+  const handleReady = useCallback(() => setReady(true), []);
+  const handleFail = useCallback((error: unknown) => {
+    console.error("Unable to load the Miskova bottle scene", error);
+    setFailed(true);
+  }, []);
+
+  const controlRafRef = useRef<number | null>(null);
+  const triggerControlLoop = useCallback((durationMs = 1200) => {
+    if (controlRafRef.current !== null) {
+      cancelAnimationFrame(controlRafRef.current);
+    }
+    const start = performance.now();
+    const step = () => {
+      invalidateRef.current();
+      if (performance.now() - start < durationMs) {
+        controlRafRef.current = requestAnimationFrame(step);
+      } else {
+        controlRafRef.current = null;
+      }
+    };
+    step();
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (controlRafRef.current !== null) {
+        cancelAnimationFrame(controlRafRef.current);
+      }
+    };
+  }, []);
+
+  const handleControl = () => {
+    if (control.state === "cap") {
+      liftCap();
+      triggerControlLoop();
+    } else if (control.state === "atomizer") {
+      pressAtomizer();
+      triggerControlLoop();
+    } else {
+      invalidateRef.current();
+    }
+  };
+
+  // Offscreen/hidden-tab pause only. Mobile renders on demand; desktop renders
+  // continuously. The canvas mounts eagerly on first paint (LCP hit accepted).
+  const frameloop = !visible ? "never" : reduceMotion || mobile ? "demand" : "always";
+  const shouldMount = host !== null && webglAllowed && !failed;
+  return (
+    <div
+      ref={hostRef}
+      className={`bottleStage ${className}`}
+      data-ready={ready ? "true" : "false"}
+      data-error={failed ? "true" : "false"}
+    >
+      {shouldMount ? (
+        <Canvas
+          className="bottleStage__surface"
+          frameloop={frameloop}
+          dpr={mobile ? [1, 1] : [1, 1.5]}
+          gl={{ antialias: true, alpha: false, powerPreference: "high-performance" }}
+          camera={{
+            fov: CAMERA.fov,
+            near: CAMERA.near,
+            far: CAMERA.far,
+            position: CAMERA.desktop,
+          }}
+          onCreated={({ gl, invalidate }) => {
+            gl.toneMapping = THREE.ACESFilmicToneMapping;
+            gl.toneMappingExposure = 0.82;
+            invalidateRef.current = invalidate;
+          }}
+        >
+          <StageContents
+            host={host}
+            mobile={mobile}
+            compact={compact}
+            reduceMotion={reduceMotion}
+            onReady={handleReady}
+            onFail={handleFail}
+          />
+        </Canvas>
+      ) : (
+        <div className={backdropStyles.stageFallback} role="status">
+          <div className={backdropStyles.monogram} aria-hidden="true">
+            M
+          </div>
+          <span className={backdropStyles.fallbackWord}>Miss Cova</span>
+        </div>
+      )}
+      <button
+        className="bottleStage__control"
+        type="button"
+        data-state={control.state}
+        onClick={handleControl}
+      >
+        {control.label}
+      </button>
+      <div className="bottleStage__loading" role="status" aria-live="polite">
+        <span aria-hidden="true" />
+        Preparing the bottle
+      </div>
+      <p className="bottleStage__error">
+        The 3D composition could not be loaded. Crimson Bloom is still available below.
+      </p>
+    </div>
+  );
+}

@@ -1,0 +1,212 @@
+:root {
+  --paper: #F9F7F2;
+  --surface: #FFFFFF;
+  --ink: #131316;
+  --ink-soft: #3F3F46;
+  --line: rgba(19, 19, 22, 0.12);
+  --line-light: rgba(249, 247, 242, 0.16);
+  --brand-black: #2D2D2D;
+  --gold: #C3A14B;
+  --gold-bright: #D4AF37;
+  --gold-light: #E5C878;
+  --gold-ink: #765F24;
+  --paper-warm: #F5EFDF;
+  --danger: #8b3131;
+  --success: #2e6845;
+
+  --display: var(--font-bodoni), "Iowan Old Style", Georgia, serif;
+  --body: "Almarai", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  --ann-h: 36px;
+  --header-h: 84px;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+a:link,
+a:visited {
+  color: inherit;
+}
+
+a {
+  text-decoration: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  background: var(--paper);
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body.locked {
+  overflow: hidden;
+}
+
+* {
+  box-sizing: border-box;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+body {
+  width: 100%;
+  min-width: 320px;
+  margin: 0;
+  overflow-x: clip;
+}
+
+:focus-visible {
+  outline: 3px solid var(--gold-ink);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --ink-soft: #131316;
+    --line: rgba(19, 19, 22, 0.4);
+  }
+}
+
+.mk-announcement-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.mk-announcement-content p {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.mk-dot {
+  color: var(--gold);
+  font-size: 10px;
+}
+
+.mk-announcement-dismiss {
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  width: 44px;
+  height: 44px;
+  transform: translateY(-50%);
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 16px;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: color 0.2s ease;
+}
+
+.mk-announcement-dismiss:hover {
+  color: #ffffff;
+}
+
+body.announcement-closed {
+  --ann-h: 0px;
+}
+
+body.announcement-closed .mk-announcement {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Global Buttons */
+.mk-primary-button,
+.mk-secondary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 28px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border-radius: 2px;
+  border: 1px solid var(--ink);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  text-decoration: none;
+}
+
+.mk-primary-button {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.mk-primary-button:hover {
+  background: var(--gold);
+  color: #11140f;
+  border-color: var(--gold);
+}
+
+.mk-secondary-button {
+  background: transparent;
+  color: var(--ink);
+}
+
+.mk-secondary-button:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.mk-icon-button {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: transparent;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: background 0.2s ease;
+}
+
+.mk-icon-button:hover {
+  background: var(--ink);
+  color: #ffffff;
+}
+
+/* Base controls shared across shell and sections (header/search/footer live in site-shell.css) */

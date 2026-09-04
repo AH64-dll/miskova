@@ -1,0 +1,1669 @@
+/* ===========================================================================
+   Miskova Dedicated Collection Pages Styling & Art Direction
+   =========================================================================== */
+
+/* --- Base Collection Shell & Breadcrumbs ---------------------------------- */
+
+.collection-page-root {
+  min-height: 100vh;
+  background: var(--paper);
+  color: var(--ink);
+  padding-top: clamp(60px, 8vh, 90px);
+}
+
+.collection-container {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 0 clamp(20px, 5vw, 64px);
+}
+
+.collection-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin-bottom: clamp(24px, 3.5vh, 40px);
+}
+
+.collection-breadcrumbs a {
+  color: var(--ink-soft);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.collection-breadcrumbs a:hover {
+  color: var(--gold);
+}
+
+.collection-breadcrumbs-sep {
+  opacity: 0.4;
+  font-size: 10px;
+}
+
+.collection-breadcrumbs-current {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* --- Hero Banner System ---------------------------------------------------- */
+
+.collection-hero {
+  padding: clamp(32px, 5vh, 64px) 0 clamp(44px, 6vh, 80px);
+  border-bottom: 1px solid var(--line);
+  margin-bottom: clamp(36px, 5vh, 64px);
+  position: relative;
+}
+
+.collection-hero-inner {
+  max-width: 860px;
+}
+
+.collection-kicker-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.collection-scent-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: rgba(212, 175, 55, 0.08);
+  border: 1px solid var(--gold);
+  color: var(--ink);
+}
+
+.collection-title {
+  font-family: var(--display);
+  font-size: clamp(36px, 4.8vw, 64px);
+  font-weight: 400;
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+  margin: 0 0 18px;
+  text-wrap: balance;
+}
+
+.collection-subtitle {
+  font-size: clamp(15.5px, 1.4vw, 18px);
+  line-height: 1.7;
+  color: var(--ink-soft);
+  margin: 0 0 24px;
+  max-width: 720px;
+}
+
+.collection-meta-bar {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  flex-wrap: wrap;
+}
+
+.collection-count-pill {
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: 0.04em;
+}
+
+/* ===========================================================================
+   ART DIRECTION A: Summer Collection ("Mediterranean Luminous")
+   =========================================================================== */
+
+/* Summer base background lives in the TASTE section below (line ~1129) */
+
+.summer-page-theme .collection-scent-badge {
+  background: rgba(43, 140, 168, 0.08);
+  border-color: #2b8ca8;
+  color: #175d71;
+}
+
+/* Pacific Sol Flagship Spotlight Split Layout */
+
+.summer-flagship-spotlight {
+  background: #ffffff;
+  border: 1px solid rgba(43, 140, 168, 0.2);
+  border-radius: 2px;
+  display: grid;
+  grid-template-columns: minmax(320px, 460px) 1fr;
+  gap: clamp(32px, 5vw, 64px);
+  padding: clamp(28px, 4.5vw, 56px);
+  margin-bottom: clamp(56px, 8vh, 96px);
+  box-shadow: 0 16px 48px rgba(43, 140, 168, 0.06);
+  position: relative;
+  overflow: hidden;
+}
+
+.summer-flagship-spotlight::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.summer-spotlight-media {
+  position: relative;
+  background: #f8faf9;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  min-height: 400px;
+}
+
+.summer-spotlight-img {
+  max-height: 380px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 16px 28px rgba(0, 0, 0, 0.1));
+  transition: transform 0.4s ease;
+}
+
+.summer-flagship-spotlight:hover .summer-spotlight-img {
+  transform: scale(1.03) translateY(-4px);
+}
+
+.summer-spotlight-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 18px;
+}
+
+.summer-spotlight-kicker {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold);
+  font-weight: 600;
+}
+
+.summer-spotlight-title {
+  font-family: var(--display);
+  font-size: clamp(32px, 3.8vw, 48px);
+  font-weight: 400;
+  color: var(--ink);
+  margin: 0;
+  line-height: 1.1;
+}
+
+.summer-spotlight-desc {
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--ink-soft);
+  margin: 0;
+}
+
+.summer-accords-cluster {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 6px 0;
+}
+
+.summer-accord-pill {
+  font-size: 11.5px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: #f2f7f6;
+  border: 1px solid #d3e5e2;
+  color: #1a646c;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.summer-spotlight-notes {
+  background: #fafaf8;
+  border: 1px solid var(--line);
+  padding: 14px 18px;
+  border-radius: 2px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.spotlight-note-col strong {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin-bottom: 4px;
+}
+
+.spotlight-note-col span {
+  font-size: 12.5px;
+  color: var(--ink);
+}
+
+.summer-spotlight-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.summer-spotlight-price {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.summer-spotlight-price s {
+  font-size: 14px;
+  color: var(--ink-soft);
+  margin-left: 8px;
+  font-weight: 400;
+}
+
+/* Summer Grid */
+
+.summer-products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: clamp(24px, 3.5vw, 40px);
+  margin-bottom: clamp(64px, 10vh, 120px);
+}
+
+.summer-product-card {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.summer-product-card:hover {
+  transform: translateY(-6px);
+  border-color: var(--gold);
+  box-shadow: 0 20px 48px rgba(43, 140, 168, 0.08);
+}
+
+.summer-card-media {
+  position: relative;
+  background: #f8faf9;
+  height: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  overflow: hidden;
+}
+
+.summer-card-img {
+  max-height: 250px;
+  width: auto;
+  object-fit: contain;
+  transition: transform 0.4s ease;
+}
+
+.summer-product-card:hover .summer-card-img {
+  transform: scale(1.05);
+}
+
+.summer-card-badge {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  background: rgba(17, 20, 15, 0.85);
+  color: #fff;
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  padding: 4px 10px;
+  border-radius: 2px;
+  font-weight: 600;
+}
+
+.summer-card-body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.summer-card-family {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin-bottom: 6px;
+}
+
+.summer-card-title {
+  font-family: var(--display);
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--ink);
+  margin: 0 0 10px;
+}
+
+.summer-card-desc {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+  margin: 0 0 16px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.summer-card-accords {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.summer-micro-accord {
+  font-size: 10.5px;
+  padding: 3px 8px;
+  background: #f3f7f6;
+  border-radius: 999px;
+  color: #1a646c;
+  font-weight: 600;
+}
+
+.summer-card-footer {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+}
+
+/* ===========================================================================
+   ART DIRECTION B: For Him ("Architectural Authority")
+   =========================================================================== */
+
+/* For Him base background lives in the TASTE section below (line ~1353) */
+
+.for-him-theme .collection-breadcrumbs,
+.for-him-theme .collection-breadcrumbs a {
+  color: #8c948e;
+}
+
+.for-him-theme .collection-breadcrumbs-current {
+  color: #edece8;
+}
+
+.for-him-theme .collection-hero {
+  border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.for-him-theme .collection-title {
+  color: #f7f6f2;
+}
+
+.for-him-theme .collection-subtitle {
+  color: #a4aca6;
+}
+
+.for-him-theme .collection-scent-badge {
+  background: rgba(212, 175, 55, 0.12);
+  border-color: rgba(212, 175, 55, 0.45);
+  color: var(--gold);
+}
+
+.for-him-theme .collection-count-pill {
+  color: #f7f6f2;
+}
+
+.him-products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: clamp(28px, 4vw, 48px);
+  margin-bottom: clamp(64px, 10vh, 120px);
+}
+
+.him-product-card {
+  background: #141b16;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  position: relative;
+}
+
+.him-product-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.him-product-card:hover {
+  transform: translateY(-6px);
+  border-color: rgba(212, 175, 55, 0.5);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+}
+
+.him-product-card:hover::before {
+  opacity: 1;
+}
+
+.him-card-media {
+  position: relative;
+  height: 340px;
+  background: #090d0b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.him-card-img {
+  max-height: 270px;
+  width: auto;
+  object-fit: contain;
+  transition: transform 0.4s ease;
+}
+
+.him-product-card:hover .him-card-img {
+  transform: scale(1.05);
+}
+
+.him-card-body {
+  padding: 26px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.him-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.him-chapter-tag {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.him-family-tag {
+  font-size: 11.5px;
+  color: #8c948e;
+}
+
+.him-card-title {
+  font-family: var(--display);
+  font-size: 24px;
+  font-weight: 400;
+  color: #f7f6f2;
+  margin: 0 0 12px;
+}
+
+.him-card-desc {
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: #a4aca6;
+  margin: 0 0 20px;
+}
+
+/* 3-Tier Note Architecture Drawer */
+
+.him-notes-architecture {
+  background: #0e1410;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 2px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.him-note-tier {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 12px;
+}
+
+.him-tier-label {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold);
+  width: 44px;
+  flex-shrink: 0;
+  font-weight: 600;
+}
+
+.him-tier-val {
+  color: #d8deda;
+  line-height: 1.4;
+}
+
+.him-card-foot {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 18px;
+}
+
+.him-price {
+  font-size: 19px;
+  font-weight: 600;
+  color: #f7f6f2;
+}
+
+.him-price s {
+  font-size: 13.5px;
+  color: #8c948e;
+  margin-left: 6px;
+  font-weight: 400;
+}
+
+/* ===========================================================================
+   ART DIRECTION C: For Her ("Velvet Florals & Golden Opulence")
+   =========================================================================== */
+
+.for-her-theme {
+  position: relative;
+  isolation: isolate;
+  background:
+    radial-gradient(ellipse 900px 500px at 75% 5%, rgba(139, 21, 40, 0.06) 0%, transparent 55%),
+    radial-gradient(ellipse 700px 450px at 10% 20%, rgba(212, 175, 55, 0.05) 0%, transparent 50%),
+    radial-gradient(ellipse 800px 600px at 50% 110%, rgba(139, 21, 40, 0.04) 0%, transparent 55%),
+    linear-gradient(178deg, #fcf8f5 0%, #faf4ef 34%, #f9f1ea 72%, #fbf7f4 100%);
+  color: #1a1614;
+}
+
+/* Delicate parchment grain — fixed film texture */
+.for-her-theme::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: -1;
+}
+
+.for-her-theme .collection-hero {
+  border-bottom: 1px solid rgba(139, 21, 40, 0.12);
+}
+
+.for-her-theme .collection-title {
+  text-shadow: 0 1px 0 rgba(255, 252, 248, 0.9), 0 0 32px rgba(139, 21, 40, 0.08);
+}
+
+.for-her-theme .collection-scent-badge {
+  background: rgba(139, 21, 40, 0.06);
+  border-color: #8b1528;
+  color: #8b1528;
+}
+
+.her-lookbook-list {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(48px, 7vh, 88px);
+  margin-bottom: clamp(64px, 10vh, 120px);
+}
+
+.her-lookbook-item {
+  display: grid;
+  grid-template-columns: minmax(300px, 460px) 1fr;
+  gap: clamp(32px, 5vw, 72px);
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #ede3dc;
+  border-radius: 2px;
+  padding: clamp(24px, 4vw, 56px);
+  box-shadow: 0 12px 36px rgba(139, 21, 40, 0.04);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.her-lookbook-item:nth-child(even) {
+  grid-template-columns: 1fr minmax(300px, 460px);
+}
+
+.her-lookbook-item:nth-child(even) .her-item-media {
+  order: 2;
+}
+
+.her-lookbook-item:hover {
+  border-color: #8b1528;
+  box-shadow: 0 20px 52px rgba(139, 21, 40, 0.08);
+}
+
+.her-item-media {
+  position: relative;
+  background: #faf4ef;
+  border-radius: 2px;
+  height: clamp(340px, 44vh, 440px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px;
+}
+
+.her-item-img {
+  max-height: 100%;
+  width: auto;
+  object-fit: contain;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.her-lookbook-item:hover .her-item-img {
+  transform: scale(1.04);
+}
+
+.her-item-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.her-chapter-kicker {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #8b1528;
+  font-weight: 600;
+}
+
+.her-item-title {
+  font-family: var(--display);
+  font-size: clamp(28px, 3.4vw, 44px);
+  font-weight: 400;
+  line-height: 1.1;
+  color: #1a1614;
+  margin: 0;
+}
+
+.her-item-aura {
+  font-size: 13.5px;
+  color: #8c6a58;
+  font-style: italic;
+}
+
+.her-item-desc {
+  font-size: 15px;
+  line-height: 1.75;
+  color: #4a3e38;
+  margin: 0;
+}
+
+/* Scent Sillage Scale Meter */
+
+.her-sillage-box {
+  background: #fdfaf8;
+  border: 1px solid #ebdcd3;
+  padding: 14px 18px;
+  border-radius: 2px;
+  margin: 4px 0;
+}
+
+.her-sillage-label-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11.5px;
+  color: #7a665a;
+  margin-bottom: 8px;
+}
+
+.her-sillage-track {
+  height: 4px;
+  background: #ebdcd3;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.her-sillage-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #d4af37, #8b1528);
+  border-radius: 999px;
+}
+
+.her-notes-pills {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.her-note-badge {
+  font-size: 11.5px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: #f7ebe6;
+  color: #6d1b29;
+  font-weight: 500;
+}
+
+.her-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-top: 10px;
+}
+
+/* ===========================================================================
+   ART DIRECTION D: All Products Archive ("The Haute Perfumery Archive")
+   =========================================================================== */
+
+.archive-filter-bar {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: clamp(16px, 2.5vw, 24px);
+  margin-bottom: clamp(32px, 4vh, 48px);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.archive-filter-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.archive-pill-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.archive-filter-label {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  font-weight: 600;
+  margin-right: 6px;
+}
+
+.archive-pill {
+  padding: 6px 14px;
+  border: 1px solid var(--line);
+  background: transparent;
+  border-radius: 999px;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.archive-pill:hover {
+  border-color: var(--gold);
+  color: var(--ink);
+}
+
+.archive-pill.is-active {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+  font-weight: 600;
+}
+
+.archive-controls-cluster {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.archive-sort-select {
+  padding: 7px 14px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 12.5px;
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+
+.archive-view-toggle {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.archive-toggle-btn {
+  padding: 6px 12px;
+  background: transparent;
+  border: none;
+  font-size: 12px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.archive-toggle-btn.is-active {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* Chapter Full-Width View */
+
+.archive-chapters-list {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  margin-bottom: clamp(64px, 10vh, 120px);
+}
+
+.archive-chapter-card {
+  display: grid;
+  grid-template-columns: 260px 1fr auto;
+  gap: 32px;
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 24px 32px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.archive-chapter-card:hover {
+  border-color: var(--gold);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.05);
+}
+
+.archive-chapter-media {
+  height: 200px;
+  background: #fafaf8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.archive-chapter-img {
+  max-height: 170px;
+  width: auto;
+  object-fit: contain;
+}
+
+/* ===========================================================================
+   ART DIRECTION E: Best Sellers ("The Coveted Icons")
+   =========================================================================== */
+
+.bestsellers-ranked-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-bottom: clamp(64px, 10vh, 120px);
+}
+
+.bestseller-ranked-card {
+  display: grid;
+  grid-template-columns: 80px 220px 1fr auto;
+  gap: clamp(20px, 3.5vw, 40px);
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 24px clamp(20px, 3vw, 36px);
+  position: relative;
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.bestseller-ranked-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--gold);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.06);
+}
+
+.bestseller-rank-num {
+  font-family: var(--display);
+  font-size: clamp(32px, 4vw, 52px);
+  font-weight: 300;
+  color: var(--gold);
+  line-height: 1;
+  text-align: center;
+}
+
+.bestseller-media {
+  height: 190px;
+  background: #fafaf8;
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+}
+
+.bestseller-img {
+  max-height: 160px;
+  width: auto;
+  object-fit: contain;
+  transition: transform 0.3s ease;
+}
+
+.bestseller-ranked-card:hover .bestseller-img {
+  transform: scale(1.05);
+}
+
+.bestseller-acclaim-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(212, 175, 55, 0.08);
+  border: 1px solid var(--gold);
+  color: var(--ink);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+}
+
+/* ===========================================================================
+   ART DIRECTION F: Master Collections Directory (/collections)
+   =========================================================================== */
+
+.master-portals-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: clamp(24px, 3.5vw, 40px);
+  margin-bottom: clamp(64px, 10vh, 120px);
+}
+
+.master-portal-card {
+  position: relative;
+  border-radius: 2px;
+  overflow: hidden;
+  min-height: 440px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: clamp(28px, 4vw, 48px);
+  text-decoration: none;
+  border: 1px solid var(--line);
+  transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.master-portal-card:hover {
+  transform: translateY(-6px);
+  border-color: var(--gold);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.12);
+}
+
+.master-portal-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 1;
+}
+
+.master-portal-card:hover .master-portal-bg {
+  transform: scale(1.05);
+}
+
+.master-portal-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(17, 20, 15, 0.2) 0%, rgba(17, 20, 15, 0.85) 100%);
+  z-index: 2;
+}
+
+.master-portal-content {
+  position: relative;
+  z-index: 3;
+  color: #fff;
+}
+
+.master-portal-kicker {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 8px;
+  display: block;
+}
+
+.master-portal-title {
+  font-family: var(--display);
+  font-size: clamp(28px, 3.2vw, 42px);
+  font-weight: 400;
+  margin: 0 0 10px;
+  line-height: 1.1;
+  color: #fff;
+}
+
+.master-portal-desc {
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: #d2d6d3;
+  margin: 0 0 20px;
+  max-width: 480px;
+}
+
+.master-portal-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #fff;
+  border-bottom: 1px solid var(--gold);
+  padding-bottom: 4px;
+  transition: color 0.2s ease;
+}
+
+.master-portal-card:hover .master-portal-cta {
+  color: var(--gold);
+}
+
+/* --- Responsive Adjustments ----------------------------------------------- */
+
+@media (max-width: 1024px) {
+  .summer-flagship-spotlight {
+    grid-template-columns: 1fr;
+  }
+  .bestseller-ranked-card {
+    grid-template-columns: 60px 180px 1fr;
+  }
+  .bestseller-actions {
+    grid-column: 2 / -1;
+    display: flex;
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 820px) {
+  .master-portals-grid {
+    grid-template-columns: 1fr;
+  }
+  .her-lookbook-item,
+  .her-lookbook-item:nth-child(even) {
+    grid-template-columns: 1fr;
+  }
+  .her-lookbook-item:nth-child(even) .her-item-media {
+    order: initial;
+  }
+  .archive-chapter-card {
+    grid-template-columns: 1fr;
+  }
+  .bestseller-ranked-card {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+  .bestseller-media {
+    max-width: 260px;
+    margin: 0 auto;
+  }
+  .bestseller-actions {
+    justify-content: center;
+  }
+}
+
+
+/* ===========================================================================
+   TASTE, PERSONALITY & ATMOSPHERIC DEPTH UPGRADES (RESTORED)
+   =========================================================================== */
+
+.summer-page-theme {
+  position: relative;
+  isolation: isolate;
+  background:
+    radial-gradient(ellipse 1100px 620px at 88% -8%, rgba(240, 196, 92, 0.16) 0%, transparent 62%),
+    radial-gradient(ellipse 800px 500px at 4% 14%, rgba(43, 140, 168, 0.09) 0%, transparent 58%),
+    radial-gradient(ellipse 900px 700px at 50% 118%, rgba(212, 175, 55, 0.07) 0%, transparent 60%),
+    linear-gradient(178deg, #fbf7ec 0%, #f6f4ea 34%, #eef3ef 72%, var(--paper) 100%);
+}
+
+/* Warm coastal grain — fixed film texture behind the page content */
+.summer-page-theme::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: -1;
+}
+
+.summer-page-theme .collection-hero {
+  padding: clamp(48px, 8vh, 96px) 0 clamp(56px, 8vh, 104px);
+  border-bottom: 1px solid rgba(212, 175, 55, 0.28);
+}
+
+.summer-page-theme .collection-title {
+  text-shadow: 0 1px 0 rgba(255, 252, 240, 0.9), 0 0 44px rgba(240, 196, 92, 0.18);
+}
+
+.summer-page-theme .collection-subtitle {
+  max-width: 640px;
+  font-size: clamp(16px, 1.5vw, 19px);
+}
+
+.summer-page-theme .collection-hero::after {
+  background: linear-gradient(90deg, #2b8ca8, var(--gold) 55%, rgba(240, 196, 92, 0.15));
+  width: 56px;
+  height: 2px;
+  opacity: 0.9;
+  box-shadow: 0 0 12px rgba(240, 196, 92, 0.35);
+}
+.summer-flagship-spotlight {
+  background:
+    radial-gradient(circle at 82% 12%, rgba(240, 196, 92, 0.14) 0%, transparent 55%),
+    radial-gradient(circle at 8% 88%, rgba(43, 140, 168, 0.07) 0%, transparent 50%),
+    linear-gradient(160deg, #fffdf6 0%, #fdfbf2 100%);
+  border: 1px solid rgba(212, 175, 55, 0.32);
+  border-radius: 2px;
+  display: grid;
+  grid-template-columns: minmax(320px, 460px) 1fr;
+  gap: clamp(32px, 5vw, 64px);
+  padding: clamp(28px, 4.5vw, 56px);
+  margin-bottom: clamp(80px, 12vh, 144px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    inset 0 0 80px rgba(240, 196, 92, 0.06),
+    0 24px 64px rgba(43, 140, 168, 0.09),
+    0 4px 16px rgba(212, 175, 55, 0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+.summer-flagship-spotlight::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 380px;
+  height: 380px;
+  background: radial-gradient(circle, rgba(240, 196, 92, 0.2) 0%, transparent 70%);
+  pointer-events: none;
+}
+.summer-flagship-spotlight::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 5px;
+  height: 100%;
+  background: linear-gradient(180deg, var(--gold), #2b8ca8 45%, transparent);
+  opacity: 0.85;
+  pointer-events: none;
+}
+.for-him-theme .collection-hero {
+  position: relative;
+  overflow: hidden;
+  padding-top: clamp(72px, 12vh, 128px);
+  padding-bottom: clamp(56px, 9vh, 96px);
+  border-bottom: none;
+  background: radial-gradient(ellipse 70% 120% at 50% 110%, rgba(212, 175, 55, 0.10) 0%, transparent 65%);
+}
+
+/* Threshold hairlines — a lit entryway, not a divider */
+.for-him-theme .collection-hero::after {
+  content: "";
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: 0;
+  height: 1px;
+  margin-top: 0;
+  background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.85), transparent);
+}
+
+.for-him-theme .collection-hero::before {
+  content: "";
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: -5px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.28), transparent);
+}
+
+.for-him-theme .collection-title {
+  font-size: clamp(40px, 6.2vw, 76px);
+  letter-spacing: 0.01em;
+  line-height: 1.04;
+  text-align: center;
+  color: transparent;
+  background: linear-gradient(178deg, #f8f5ec 0%, #f8f5ec 45%, #c9a94f 72%, #8f7326 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.for-him-theme .collection-subtitle {
+  max-width: 58ch;
+  margin-inline: auto;
+  text-align: center;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  color: #9aa39c;
+}
+
+.for-him-theme .collection-count-pill {
+  color: #f7f6f2;
+}
+.summer-page-theme .summer-spotlight-kicker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 10.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gold);
+  font-weight: 600;
+}
+
+.summer-page-theme .summer-spotlight-kicker::after {
+  content: "";
+  flex: 0 0 36px;
+  height: 1px;
+  background: linear-gradient(90deg, var(--gold), transparent);
+}
+
+.summer-page-theme .summer-spotlight-title {
+  letter-spacing: -0.015em;
+  font-style: italic;
+}
+
+.summer-page-theme .summer-spotlight-desc {
+  font-size: 15.5px;
+  max-width: 54ch;
+}
+.summer-page-theme .summer-product-card {
+  background: linear-gradient(175deg, #fffefa 0%, #fbfaf3 100%);
+  border: 1px solid rgba(212, 175, 55, 0.16);
+  border-radius: 2px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 2px 10px rgba(23, 60, 55, 0.04);
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.summer-page-theme .summer-product-card:hover {
+  transform: translateY(-6px);
+  border-color: rgba(212, 175, 55, 0.55);
+  box-shadow:
+    0 24px 56px rgba(23, 90, 105, 0.12),
+    0 0 0 3px rgba(43, 140, 168, 0.07),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.7);
+}
+
+.summer-page-theme .summer-card-media {
+  position: relative;
+  background:
+    radial-gradient(circle at 70% 20%, rgba(240, 196, 92, 0.14) 0%, transparent 55%),
+    radial-gradient(circle at 20% 85%, rgba(43, 140, 168, 0.08) 0%, transparent 50%),
+    linear-gradient(170deg, #faf6ea, #f1f4ef);
+  height: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  overflow: hidden;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.12);
+}
+
+.summer-page-theme .summer-card-img {
+  max-height: 250px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 18px rgba(23, 60, 55, 0.12));
+  transition: transform 0.4s ease;
+}
+
+.summer-page-theme .summer-product-card:hover .summer-card-img {
+  transform: scale(1.05);
+}
+
+.summer-page-theme .summer-card-badge {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  background: linear-gradient(135deg, #22301f, #11140f);
+  border: 1px solid rgba(212, 175, 55, 0.5);
+  color: #f3df9b;
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 2px;
+  font-weight: 600;
+}
+.for-him-theme {
+  position: relative;
+  isolation: isolate;
+  background:
+    radial-gradient(ellipse 1000px 500px at 80% 0%, rgba(212, 175, 55, 0.07) 0%, transparent 60%),
+    #0d120f;
+  color: #edece8;
+}
+
+/* Warm grain texture behind the page content */
+.for-him-theme::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: -1;
+}
+/* Ghost watermark seal echoing the hero medallion */
+.bestsellers-ranked-list::before {
+  content: "✦";
+  position: absolute;
+  top: 34%;
+  right: -40px;
+  font-size: clamp(280px, 38vw, 520px);
+  color: rgba(212, 175, 55, 0.05);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.bestseller-ranked-card {
+  z-index: 1;
+}
+
+/* Rank 01 — full-bleed flagship banner */
+.bestseller-ranked-card.flagship {
+  grid-template-columns: 72px minmax(260px, 420px) 1fr auto;
+  min-height: 320px;
+  padding: 40px clamp(24px, 4vw, 48px);
+  background: linear-gradient(150deg, #fffdf7 0%, var(--paper-warm) 55%, #f3e6c8 100%);
+  border: 1px solid var(--gold);
+  border-left: 4px solid var(--gold-bright);
+  box-shadow: 0 24px 64px rgba(166, 129, 63, 0.16);
+}
+
+/* Premier badge + champagne backing */
+.bestseller-flagship-pill {
+  background: linear-gradient(135deg, var(--gold-bright), var(--gold));
+  color: #fffdf7;
+  border: none;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  box-shadow: 0 6px 18px rgba(212, 175, 55, 0.35);
+}
+
+.flagship .bestseller-media {
+  height: 280px;
+}
+
+.flagship .bestseller-img {
+  max-height: 240px;
+}
+
+.flagship .bestseller-rank-num {
+  font-size: 34px;
+}
+
+/* Alternating rhythm + demand-priority rank decay */
+.bestseller-ranked-card:nth-child(even) {
+  background: linear-gradient(180deg, #fdfbf5 0%, #f7f2e6 100%);
+  border-left: 3px solid rgba(212, 175, 55, 0.45);
+}
+
+.bestseller-ranked-card:nth-child(odd):not(:first-child) {
+  background: #ffffff;
+  border-left: 3px solid rgba(23, 24, 18, 0.08);
+}
+
+.bestseller-ranked-card:nth-child(n+6) {
+  opacity: 0.94;
+}
+
+.bestseller-ranked-card:nth-child(n+6):hover {
+  opacity: 1;
+}
+
+/* Typographic scale for the info column (replaces inline styles) */
+.bestseller-name {
+  font-family: var(--display);
+  font-size: 26px;
+  font-weight: 400;
+  color: var(--ink);
+  margin: 4px 0 8px;
+  line-height: 1.15;
+}
+
+.bestseller-family {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin-bottom: 10px;
+  display: block;
+}
+
+.bestseller-price {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--ink);
+  text-align: right;
+  margin-bottom: 10px;
+}
+
+.bestseller-price s {
+  font-size: 14px;
+  color: var(--ink-soft);
+  margin-left: 8px;
+  font-weight: 400;
+}
+
+/* Engraved price rail + foil CTA */
+.bestseller-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  border-left: 1px dashed rgba(212, 175, 55, 0.35);
+  padding-left: clamp(16px, 2vw, 28px);
+}
+
+.bestseller-ranked-card .mk-primary-button {
+  background: linear-gradient(135deg, var(--gold-bright), var(--gold));
+  box-shadow: 0 4px 14px rgba(166, 129, 63, 0.25);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.bestseller-ranked-card .mk-primary-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(166, 129, 63, 0.4);
+}
+
+/* Spotlight plinth + gallery reveal */
+.bestseller-media {
+  background: radial-gradient(circle at 50% 40%, #ffffff 0%, #f4efe3 100%);
+  border: 1px solid rgba(23, 24, 18, 0.05);
+}
+
+.bestseller-ranked-card:hover .bestseller-img {
+  transform: scale(1.07) translateY(-2px);
+  filter: drop-shadow(0 10px 18px rgba(23, 24, 18, 0.18));
+}
+
+.bestseller-name::after {
+  content: "";
+  display: block;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--gold-bright), var(--gold-light));
+  transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  margin-top: 6px;
+}
+
+.bestseller-ranked-card:hover .bestseller-name::after {
+  width: 56px;
+}
+
+/* Reduced-motion guards for new motion */
+@media (prefers-reduced-motion: reduce) {
+  .bestseller-ranked-card .mk-primary-button,
+  .bestseller-ranked-card .mk-primary-button:hover,
+  .bestseller-img {
+    transition: none;
+  }
+
+  .bestseller-ranked-card .mk-primary-button:hover {
+    transform: none;
+  }
+
+  .bestseller-ranked-card:hover .bestseller-img {
+    transform: none;
+    filter: none;
+  }
+
+  .bestseller-name::after {
+    transition: none;
+  }
+}
+
+
+/* For Her taste lookbook + sillage upgrades */
+.for-her-theme .collection-title {
+  font-style: italic;
+  letter-spacing: -0.015em;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.9), 0 0 32px rgba(212, 175, 55, 0.15);
+}
+
+.her-lookbook-item {
+  background: linear-gradient(150deg, #ffffff 0%, #fdfbf7 100%);
+  border: 1px solid rgba(212, 175, 55, 0.22);
+  border-radius: 4px;
+  box-shadow: 0 4px 20px rgba(139, 21, 40, 0.04), 0 1px 3px rgba(0,0,0,0.02);
+  transition: transform 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.her-lookbook-item:hover {
+  transform: translateY(-4px);
+  border-color: rgba(212, 175, 55, 0.6);
+  box-shadow: 0 20px 48px rgba(139, 21, 40, 0.08), 0 0 0 2px rgba(212, 175, 55, 0.12);
+}
+
+.her-item-media {
+  position: relative;
+  background: radial-gradient(circle at 50% 50%, #ffffff 0%, #faf4ed 100%);
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid rgba(212, 175, 55, 0.15);
+}
+
+.her-item-img {
+  max-height: 380px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 24px rgba(139, 21, 40, 0.12));
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.her-lookbook-item:hover .her-item-img {
+  transform: scale(1.05) translateY(-3px);
+}
+
+.her-sillage-track {
+  height: 6px;
+  background: rgba(212, 175, 55, 0.15);
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+}
+
+.her-sillage-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold), #8b1528);
+  border-radius: 999px;
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.4);
+  transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.her-note-badge {
+  background: rgba(212, 175, 55, 0.08);
+  border: 1px solid rgba(212, 175, 55, 0.28);
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  letter-spacing: 0.04em;
+}
+
+/* ===========================================================================
+   ART DIRECTION E: All Products ("The Complete Archive")
+   =========================================================================== */
+
+.all-theme {
+  background:
+    radial-gradient(ellipse 1200px 600px at 80% -5%, rgba(212, 175, 55, 0.04) 0%, transparent 60%),
+    linear-gradient(178deg, #faf9f6 0%, var(--paper) 40%, #f7f5f0 100%);
+}
+
+.all-theme .collection-hero {
+  border-bottom: 1px solid rgba(23, 24, 18, 0.08);
+}
+
+.all-theme .collection-title {
+  letter-spacing: -0.02em;
+}
+
+/* ===========================================================================
+   ART DIRECTION F: Best Sellers ("Patron Acclaim")
+   =========================================================================== */
+
+.bestsellers-theme {
+  background:
+    radial-gradient(ellipse 1000px 600px at 85% -5%, rgba(212, 175, 55, 0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 800px 500px at 10% 80%, rgba(212, 175, 55, 0.04) 0%, transparent 55%),
+    linear-gradient(178deg, #fdfbf5 0%, var(--paper) 40%, #f7f5ed 100%);
+}
+
+.bestsellers-theme .collection-hero {
+  border-bottom: 1px solid rgba(212, 175, 55, 0.18);
+}
+
+.bestsellers-theme .collection-title {
+  text-shadow: 0 1px 0 rgba(255, 252, 240, 0.9), 0 0 44px rgba(212, 175, 55, 0.12);
+}
+

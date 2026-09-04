@@ -1,0 +1,133 @@
+/* Nav shell enhancements — balanced sticky-header distribution, premium
+   top-nav link treatment, and the announcement marquee.
+   Frozen stylesheets (globals/site-shell) remain the base; these classes
+   compose alongside them and never replace existing class names. */
+
+/* Balanced distribution: outer columns claim equal space, logo stays centered. */
+@media (min-width: 1024px) {
+  .header {
+    column-gap: clamp(16px, 2vw, 32px);
+  }
+}
+
+.navLeft {
+  justify-content: flex-start;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.navRight {
+  justify-content: flex-end;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.wordmark {
+  flex: 0 0 auto;
+  justify-content: center;
+}
+
+/* Premium top-nav links: small-caps rhythm with a gold underline reveal. */
+.navLink {
+  position: relative;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.navLink::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 8px;
+  height: 1px;
+  background: var(--gold);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.25s ease;
+}
+
+.navLink:hover::after,
+.navLink:focus-visible::after,
+.active::after {
+  transform: scaleX(1);
+}
+
+@media (max-width: 1180px) {
+  .navLink {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+  }
+}
+
+/* Right-column links join the left column in collapsing to the Menu below
+   desktop widths (frozen CSS only collapses .mk-nav--left links). */
+@media (max-width: 1024px) {
+  .navRight .navLink {
+    display: none;
+  }
+}
+
+/* Announcement marquee: seamless -50% loop over two identical halves,
+   sourced only from ANNOUNCEMENT_TEXT. */
+.marquee {
+  overflow: hidden;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.marquee .track {
+  display: flex;
+  align-items: center;
+  width: max-content;
+  max-width: none;
+  margin: 0 auto;
+  animation: mk-nav-marquee 26s linear infinite;
+  will-change: transform;
+}
+
+.marquee .group {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-right: 14px;
+}
+
+.item {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  white-space: nowrap;
+}
+
+.marquee:hover .track {
+  animation-play-state: paused;
+}
+
+@keyframes mk-nav-marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee .track {
+    animation: none;
+    width: 100%;
+    max-width: 100%;
+    justify-content: center;
+  }
+  .marquee .groupDup {
+    display: none;
+  }
+  .marquee .group .item ~ .item {
+    display: none;
+  }
+  .navLink::after {
+    transition: none;
+  }
+}

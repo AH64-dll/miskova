@@ -1,0 +1,132 @@
+/* For Her persona — feminine yet restrained overlay.
+   Scoped module only; never edits collections.css or ProductCard.
+   Tokens: paper #F9F7F2, surface #FFFFFF, ink #131316,
+   rose decorative #C9768E / #E9C2CD, rose text #8B1528 (accessible on paper). */
+
+.herPersona {
+  position: relative;
+  isolation: isolate;
+  background: #f9f7f2;
+  overflow: clip;
+}
+
+/* Decorative floral SVG layers — presentational watermark behind listing
+   content (root is z-index 1); pointer-events none so taps pass through. */
+.flourish {
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+  color: #b34a63;
+  opacity: 0.12;
+}
+
+.flourishTop {
+  top: -24px;
+  right: -32px;
+  width: min(400px, 62vw);
+  height: auto;
+}
+
+.flourishBottom {
+  bottom: 8%;
+  left: -48px;
+  width: min(320px, 52vw);
+  height: auto;
+  opacity: 0.09;
+}
+
+/* Keep listing content above the flourishes. */
+.herPersona :global(.collection-page-root) {
+  position: relative;
+  z-index: 1;
+}
+
+/* Custom banner: restrained blush card around the shared hero. */
+.herPersona :global(.for-her-theme .collection-hero) {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(139, 21, 40, 0.16);
+  border-radius: 12px;
+  background:
+    radial-gradient(ellipse 420px 200px at 88% 0%, rgba(201, 118, 142, 0.16) 0%, transparent 60%),
+    radial-gradient(ellipse 360px 220px at 4% 100%, rgba(195, 161, 75, 0.1) 0%, transparent 55%),
+    linear-gradient(118deg, #fdf7f9 0%, #fae9ef 46%, #f9f7f2 100%);
+  box-shadow: 0 12px 32px rgba(139, 21, 40, 0.07);
+  padding: clamp(28px, 5vw, 56px) clamp(20px, 4vw, 48px);
+}
+
+/* Thin petal-line motif along the banner base — decorative only. */
+.herPersona :global(.for-her-theme .collection-hero::after) {
+  content: "";
+  position: absolute;
+  left: clamp(20px, 4vw, 48px);
+  bottom: 0;
+  width: 72px;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #8b1528, #c9768e 55%, rgba(201, 118, 142, 0.15));
+}
+
+/* Title stays ink for contrast; italic restraint inherited from theme. */
+.herPersona :global(.for-her-theme .collection-title) {
+  color: #131316;
+}
+
+/* Stronger (yet accessible) pink accents, scoped to this page. */
+.herPersona :global(.for-her-theme .collection-scent-badge) {
+  border-color: rgba(139, 21, 40, 0.45);
+  color: #8b1528;
+}
+
+.herPersona :global(.for-her-theme .collection-sort select) {
+  border-color: rgba(139, 21, 40, 0.35);
+  background-color: #ffffff;
+  color: #131316;
+  min-height: 44px;
+}
+
+.herPersona :global(.for-her-theme .mk-card:hover) {
+  border-color: rgba(179, 74, 99, 0.5);
+}
+
+.herPersona :global(.for-her-theme .mk-card-badge) {
+  background: #8b1528;
+}
+
+/* Visible keyboard focus everywhere on this page. */
+.herPersona :global(:is(a, button, select, input):focus-visible) {
+  outline: 2px solid #8b1528;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (max-width: 480px) {
+  .flourishTop {
+    top: -16px;
+    right: -24px;
+    width: min(260px, 68vw);
+  }
+
+  .flourishBottom {
+    left: -32px;
+    width: min(220px, 58vw);
+  }
+
+  .herPersona :global(.for-her-theme .collection-hero) {
+    border-radius: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .herPersona :global(*),
+  .herPersona :global(*::before),
+  .herPersona :global(*::after) {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .flourish,
+  .flourishBottom {
+    opacity: 0.08;
+  }
+}
