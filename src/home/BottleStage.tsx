@@ -24,25 +24,42 @@ import {
   setPointer,
   smoothstep,
 } from "./journeyStore";
- const CAMERA = {
-   fov: 31,
-   near: 0.05,
-   far: 40,
+const CAMERA = {
+  fov: 31,
+  near: 0.05,
+  far: 40,
   // Full-bleed hero: the bottle group is offset +x in world units so its
   // projection lands at ~65% viewport width on a 1440 canvas, with the glass
   // body scaled to 0.8 (height ≈ 47% of the hero) so its right edge clears
   // the price/CTA column by ~150px. Camera stays put so spray/wake framing
   // is unchanged.
   desktop: [0.5, -0.02, 3.75] as [number, number, number],
-  compact: [0.55, 0.75, 6.45] as [number, number, number],
+  compact: [0, 0.62, 7.2] as [number, number, number],
   target: [0.42, -0.02, 0] as [number, number, number],
-  targetCompact: [0.42, 0.65, 0] as [number, number, number],
+  // Level compact camera (position y == target y) so the label faces the
+  // viewer dead-on and the projection math is exact: the bottle is fitted
+  // into the hero's measured `data-bottle-band` element (see compactFit).
+  targetCompact: [0, 0.62, 0] as [number, number, number],
   groupOffset: [0.9, -0.1, 0] as [number, number, number],
-  // Compact: the anchor sits high-right so the bottle fills the empty zone
-  // between the header and the copy stack (headline/CTAs/caption stay clear).
-  groupOffsetCompact: [0.85, 1.27, 0] as [number, number, number],
+  // Compact fallback (only used if the band element cannot be measured):
+  // bottle centered at 50vw, projected into the 34svh band between the
+  // eyebrow and the headline. Anchor y ≈ 1.47 puts the bottle center above
+  // the level camera line so it projects into the upper band.
+  groupOffsetCompact: [0, 1.47, 0] as [number, number, number],
   bottleScale: 0.8,
- };
+};
+
+// Compact presentation scale: the band fit solves the camera distance for
+// exactly this body scale, so the projected bottle fills the measured band.
+const COMPACT_SCALE = 0.75;
+// Fallback compact fit when the band cannot be measured (SSR edge, direct
+// canvas mounts): derived from the constants above at the reference 406×804
+// hero (~1135px tall).
+const COMPACT_FIT_FALLBACK = { distance: 7.2, centerY: 0.62, anchorY: 1.47 };
+const COMPACT_PILL_GAP = 6;
+const COMPACT_FIT_NONE: CompactFit = { ...COMPACT_FIT_FALLBACK, pillTop: null };
+
+type CompactFit = { distance: number; centerY: number; anchorY: number; pillTop: number | null };
 
 const POINTER_PARALLAX = { rotationX: 0.012, rotationY: 0.022, positionX: 0.022, positionY: 0.012 };
 
@@ -64,12 +81,13 @@ function isDescendant(object: THREE.Object3D, ancestor: THREE.Object3D): boolean
    eventSource: HTMLElement | null;
    mobile: boolean;
    compact: boolean;
+   compactFit: CompactFit;
    reduceMotion: boolean;
    onReady: () => void;
    onFail: (error: unknown) => void;
  };
 
- function StageContents({ host, eventSource, mobile, compact, reduceMotion, onReady, onFail }: StageContentsProps) {
+ function StageContents({ host, eventSource, mobile, compact, compactFit, reduceMotion, onReady, onFail }: StageContentsProps) {
   const gl = useThree((state) => state.gl);
   const scene = useThree((state) => state.scene);
   const camera = useThree((state) => state.camera);
@@ -88,11 +106,12 @@ function isDescendant(object: THREE.Object3D, ancestor: THREE.Object3D): boolean
      const featured = bySlug("Liquid-Gold");
      const bottle = buildMiskovaBottle({ brand: "MISKOVA", name: featured.name, sub: "EXTRAIT DE PARFUM" });
      const spray = createSpraySystem(mobile, gl.getPixelRatio());
+    const surface = createInteractiveSurface(FLOOR_Y);
      const wake = createWakeField(mobile);
-     const surface = createInteractiveSurface(FLOOR_Y);
-     // Same gate scale factor as the bottle root below (desktop only) so the
-     // lifted cap apex stays below the header nav row.
-     const capUnit = bottle.unit * (compact ? 0.75 : CAMERA.bottleScale);
+    // Cap-lift gate: compact lifts a shorter arc so the floating cap stays
+    // inside the bottle band (clear of the eyebrow) — desktop keeps the full
+    // theatrical lift.
+    const capUnit = bottle.unit * (compact ? 0.45 : CAMERA.bottleScale);
      const capSpring = createCapSpring(bottle.cap, capUnit);
      const atomizer = createAtomizerSpring(bottle.push, bottle.unit);
      const fluid = createFluidPhysics();
@@ -101,25 +120,25 @@ function isDescendant(object: THREE.Object3D, ancestor: THREE.Object3D): boolean
 
    // --- scene assembly, environment probe, disposal -------------------------
    // The whole rig (bottle + pool + surface + wake + spray) lives in an
-   // anchored group so the full-bleed camera can place it off-center while
-   useEffect(() => {
-     const { bottle, spray, wake, surface } = rig;
-     const anchor = new THREE.Group();
-     anchor.name = "MiskovaAnchor";
-     anchorRef.current = anchor;
+  useEffect(() => {
+    const { bottle, spray, wake, surface } = rig;
+    const anchor = new THREE.Group();
+    anchor.name = "MiskovaAnchor";
+    anchorRef.current = anchor;
     const offset = compact ? CAMERA.groupOffsetCompact : CAMERA.groupOffset;
     anchor.position.set(offset[0], offset[1], offset[2]);
     // Gate fix: shrink the model so the glass body clears the price/CTA
     // column on desktop. The pool reads as the bottle's contact shadow and
     // the surface as its reactive pedestal, sized so the full ellipse (soft
-    // rim included) stays inside the 1440 canvas. On compact the anchor sits
-    // high-right at near camera height, which would render the floor discs
-    // edge-on as a hairline — the compact hero presents the bottle floating
-    // in mist with no pedestal instead. Spray + wake stay unscaled so the
-    // plume still crosses the full banner.
-    const s = compact ? 0.75 : CAMERA.bottleScale;
+    // rim included) stays inside the 1440 canvas.
+    const s = compact ? COMPACT_SCALE : CAMERA.bottleScale;
     bottle.root.scale.setScalar(s);
     if (compact) {
+      // Compact: the bottle centers over the copy band (the fit pass moves
+      // the anchor vertically) with no pedestal — the level camera would see
+      // any floor disc near-grazing as a hairline, so grounding comes from
+      // the hero's CSS contact glow under the band instead. Spray + wake stay
+      // unscaled so the plume still crosses the banner.
       anchor.add(bottle.root, spray.points, wake.group);
     } else {
       floorPool.mesh.scale.setScalar(s * 0.52);
@@ -158,18 +177,54 @@ function isDescendant(object: THREE.Object3D, ancestor: THREE.Object3D): boolean
    }, [rig, scene, gl, camera, floorPool, compact, onReady, onFail]);
 
   useEffect(() => {
-    const position = compact ? CAMERA.compact : CAMERA.desktop;
-    const target = compact ? CAMERA.targetCompact : CAMERA.target;
-    camera.position.set(position[0], position[1], position[2]);
-    camera.lookAt(target[0], target[1], target[2]);
-    // Compact dolly-in (6.9 → 6.2) grows the projection ~11% so the product
-    // reads at a glance on phones, paired with a brighter compact-only
-    // exposure + frontal fill light: the dark studio key rig was authored
-    // around the desktop anchor and underexposes the tighter phone frame.
-    // Desktop keeps the approved 0.82 exposure untouched.
+    if (compact) {
+      // Compact band fit: the level camera is aimed at its own height and
+      // dollied so the scaled bottle projects EXACTLY into the measured
+      // `data-bottle-band` element (centered at 50vw, cap-to-base inside
+      // the band). The parent recomputes the fit on resize; the fallback
+      // constants keep a sane frame if the band is missing.
+      camera.position.set(0, compactFit.centerY, compactFit.distance);
+      camera.lookAt(0, compactFit.centerY, 0);
+      // Lighter fog so the bottle's lower half does not dissolve into the
+      // dark backdrop on the tighter phone frame.
+      const fog = scene.fog;
+      if (fog instanceof THREE.FogExp2) fog.density = 0.022;
+    } else {
+      camera.position.set(CAMERA.desktop[0], CAMERA.desktop[1], CAMERA.desktop[2]);
+      camera.lookAt(CAMERA.target[0], CAMERA.target[1], CAMERA.target[2]);
+      const fog = scene.fog;
+      if (fog instanceof THREE.FogExp2) fog.density = 0.03;
+    }
+    // Compact-only brighter exposure + frontal fill lift the label plaque
+    // and the amber juice (the studio key rig was authored around the
+    // desktop anchor). Desktop keeps the approved 0.82 exposure untouched.
     gl.toneMappingExposure = compact ? 1.02 : 0.82;
     invalidate();
-  }, [camera, compact, gl, invalidate]);
+  }, [camera, compact, compactFit, gl, invalidate, scene]);
+
+  // Compact fit moves the anchor (bottle + pool) vertically so the bottle's
+  // projection lands inside the band; desktop keeps its frozen offset.
+  useEffect(() => {
+    if (!compact) return;
+    const anchor = anchorRef.current;
+    if (!anchor) return;
+    anchor.position.set(0, compactFit.anchorY, 0);
+    invalidate();
+  }, [compact, compactFit, invalidate]);
+
+  // Compact-only juice glow: the honey-amber extrait must read as glowing
+  // perfume at a glance on the dark hero — raise the juice's emissive depth
+  // (desktop keeps the authored 0.5). The rig is rebuilt per compact toggle,
+  // so restoring the previous value on teardown is just hygiene.
+  useEffect(() => {
+    if (!compact) return;
+    const juice = rig.bottle.materials.juice;
+    const prev = juice.emissiveIntensity;
+    juice.emissiveIntensity = 0.95;
+    return () => {
+      juice.emissiveIntensity = prev;
+    };
+  }, [rig, compact]);
 
    // --- pointer parallax + mesh picking -------------------------------------
    // Pointer moves are read from the HERO SECTION (the R3F eventSource owns the
@@ -463,10 +518,19 @@ function isDescendant(object: THREE.Object3D, ancestor: THREE.Object3D): boolean
           and the amber glow without blowing out the gold. No extra light on
           desktop. */}
       {compact && <directionalLight position={[1.1, 2.3, 5.4]} color="#fff1da" intensity={1.3} />}
-       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, FLOOR_Y + 0.002, 0]}>
-         <circleGeometry args={[1.9, 48]} />
-         <meshBasicMaterial color="#221810" transparent opacity={0.26} depthWrite={false} />
-       </mesh>
+      {/* Compact-only warm rim from the right-back: separates the bottle's
+          dark side from the dark hero leather so the silhouette reads. */}
+      {compact && <directionalLight position={[2.6, 0.9, -2.6]} color="#e3c98a" intensity={2.4} />}
+      {/* Grounding contact shadow under the glass base — desktop only; on
+          compact the anchor is lifted into the copy band, so this scene-space
+          disc would float far below the bottle (the compact pool rides inside
+          the anchor instead). */}
+      {!compact && (
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, FLOOR_Y + 0.002, 0]}>
+          <circleGeometry args={[1.9, 48]} />
+          <meshBasicMaterial color="#221810" transparent opacity={0.26} depthWrite={false} />
+        </mesh>
+      )}
      </>
    );
  }
@@ -484,20 +548,71 @@ function isDescendant(object: THREE.Object3D, ancestor: THREE.Object3D): boolean
    className?: string;
    eventSourceRef?: RefObject<HTMLElement | null>;
  };
- export default function BottleStage({ className = "", eventSourceRef }: BottleStageProps) {
-   const hostRef = useRef<HTMLDivElement>(null);
-   const [host, setHost] = useState<HTMLDivElement | null>(null);
-  const [mobile, setMobile] = useState(false);
-  const [compact, setCompact] = useState(false);
-  const [reduceMotion, setReduceMotion] = useState(false);
-  const [visible, setVisible] = useState(true);
-  const [webglAllowed, setWebglAllowed] = useState(true);
-  const [control, setControl] = useState({ label: "Preparing the bottle", state: "loading" });
-  const [ready, setReady] = useState(false);
-  const [failed, setFailed] = useState(false);
-  const invalidateRef = useRef<() => void>(() => {});
+export default function BottleStage({ className = "", eventSourceRef }: BottleStageProps) {
+  const hostRef = useRef<HTMLDivElement>(null);
+  const [host, setHost] = useState<HTMLDivElement | null>(null);
+ const [mobile, setMobile] = useState(false);
+ const [compact, setCompact] = useState(false);
+ // Measured compact band fit (camera distance, height, anchor y + pill top);
+ // null until the hero's `data-bottle-band` element has been measured.
+ const [compactFit, setCompactFit] = useState<CompactFit | null>(null);
+ const [reduceMotion, setReduceMotion] = useState(false);
+ const [visible, setVisible] = useState(true);
+ const [webglAllowed, setWebglAllowed] = useState(true);
+ const [control, setControl] = useState({ label: "Preparing the bottle", state: "loading" });
+ const [ready, setReady] = useState(false);
+ const [failed, setFailed] = useState(false);
+ const invalidateRef = useRef<() => void>(() => {});
 
    useEffect(() => setHost(hostRef.current), []);
+ // Compact band fit: measure the hero's `data-bottle-band` spacer (the empty
+ // strip between the eyebrow and the headline) and solve the level camera so
+ // the scaled bottle projects exactly into it — centered at 50vw, cap-to-base
+ // inside the band. Re-measured on host resize (font swap, orientation) and
+ // viewport resize. The pill top rides on the band's bottom edge so the
+ // LIFT THE CAP control always re-anchors under the bottle.
+ useEffect(() => {
+  const hostNode = hostRef.current;
+  if (!hostNode) return;
+  const scope = hostNode.parentElement ?? hostNode;
+  const tanHalf = Math.tan(((CAMERA.fov / 2) * Math.PI) / 180);
+   const halfWorld = 0.575 * COMPACT_SCALE;
+   let last: CompactFit | null = null;
+   const measure = () => {
+    const band = scope.querySelector<HTMLElement>("[data-bottle-band]");
+    if (!band) return;
+     const hostRect = hostNode.getBoundingClientRect();
+     const bandRect = band.getBoundingClientRect();
+     if (hostRect.height < 10 || bandRect.height < 10) return;
+     const heroH = hostRect.height;
+     const bandTop = bandRect.top - hostRect.top;
+     const bandH = bandRect.height;
+     const distance = (halfWorld * 2 * heroH) / (bandH * 2 * tanHalf);
+     const ndcTop = 1 - (2 * bandTop) / heroH;
+     const anchorY = COMPACT_FIT_FALLBACK.centerY + ndcTop * distance * tanHalf - halfWorld;
+     const pillTop = bandRect.bottom - hostRect.top + COMPACT_PILL_GAP;
+     const next: CompactFit = { distance, centerY: COMPACT_FIT_FALLBACK.centerY, anchorY, pillTop };
+     if (
+       last &&
+       Math.abs(last.distance - next.distance) < 0.01 &&
+      Math.abs((last?.pillTop ?? -1) - (next.pillTop ?? -1)) < 1
+     ) {
+       return;
+     }
+     last = next;
+     setCompactFit(next);
+   };
+   measure();
+   const observer = new ResizeObserver(measure);
+   observer.observe(hostNode);
+   window.addEventListener("resize", measure);
+   const settle = window.setTimeout(measure, 600);
+   return () => {
+     observer.disconnect();
+     window.removeEventListener("resize", measure);
+     window.clearTimeout(settle);
+   };
+ }, [compact, host]);
   useEffect(() => {
     const mobileQuery = window.matchMedia("(max-width: 720px)");
     const compactQuery = window.matchMedia("(max-width: 1024px)");
@@ -610,14 +725,17 @@ function isDescendant(object: THREE.Object3D, ancestor: THREE.Object3D): boolean
        }
      };
    }, []);
-   // Offscreen/hidden-tab pause only. Mobile renders on demand; desktop renders
-   // continuously. The canvas mounts eagerly on first paint (LCP hit accepted).
-   const frameloop = !visible ? "never" : reduceMotion || mobile ? "demand" : "always";
-   const shouldMount = host !== null && webglAllowed && !failed;
-   // R3F attaches its pointer listeners to the hero section when provided;
-   // falls back to its own wrapper div (pre-merge behavior) otherwise.
-   const eventSource = eventSourceRef?.current ?? host;
-   return (
+  // Offscreen/hidden-tab pause only. Mobile renders on demand; desktop renders
+  // continuously. The canvas mounts eagerly on first paint (LCP hit accepted).
+  const frameloop = !visible ? "never" : reduceMotion || mobile ? "demand" : "always";
+  const shouldMount = host !== null && webglAllowed && !failed;
+  // R3F attaches its pointer listeners to the hero section when provided;
+  // falls back to its own wrapper div (pre-merge behavior) otherwise.
+  const eventSource = eventSourceRef?.current ?? host;
+  const fit = compactFit ?? COMPACT_FIT_NONE;
+  const pillStyle =
+    compact && fit.pillTop != null ? { top: fit.pillTop, bottom: "auto" as const } : undefined;
+  return (
      <div
        ref={hostRef}
        className={`bottleStage ${className}`}
@@ -643,7 +761,8 @@ function isDescendant(object: THREE.Object3D, ancestor: THREE.Object3D): boolean
              invalidateRef.current = invalidate;
            }}
          >
-           <StageContents
+        <StageContents
+            compactFit={fit}
              host={host}
              eventSource={eventSource}
              mobile={mobile}
@@ -665,6 +784,7 @@ function isDescendant(object: THREE.Object3D, ancestor: THREE.Object3D): boolean
         className="bottleStage__control"
         type="button"
         data-state={control.state}
+        style={pillStyle}
         onClick={handleControl}
       >
         {control.label}

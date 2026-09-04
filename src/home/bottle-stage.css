@@ -166,13 +166,16 @@
    visibility: hidden;
  }
 
-@media (max-width: 720px) {
+@media (max-width: 1024px) {
   .bottleStage__control {
-    /* Compact: the bottle parks high-right, so the pill sits in the free
-       band under the featured caption, clear of it and of the USP strip. */
+    /* Compact: the bottle centers in the band above the headline, so the
+       pill rides just under the band's bottom edge (BottleStage sets `top`
+       inline from the measured band; `bottom` is cleared there too). This
+       centered fallback only shows if the band could not be measured. */
     right: 50%;
     transform: translateX(50%);
-    bottom: 62px;
+    bottom: auto;
+    top: 46svh;
   }
   .bottleStage__control:hover {
     transform: translateX(50%) translateY(-2px);

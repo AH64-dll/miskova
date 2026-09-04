@@ -74,7 +74,7 @@ export default function Hero() {
        {/* [2] copy + caption + monogram — below the 3D canvas. The grid layer
            itself is click-through (canvas pills stay clickable); only
            links/buttons inside re-enable pointer events. */}
-       <div className="pointer-events-none relative z-[2] mx-auto grid min-h-[100svh] max-w-[1600px] grid-cols-1 items-center gap-10 px-6 pb-28 pt-32 md:grid-cols-12 md:px-10 md:pb-16 [&_a]:pointer-events-auto [&_button]:pointer-events-auto">
+      <div className="pointer-events-none relative z-[2] mx-auto grid min-h-[100svh] max-w-[1600px] grid-cols-1 items-center gap-10 px-6 pb-28 pt-24 md:grid-cols-12 md:px-10 md:pb-16 md:pt-32 [&_a]:pointer-events-auto [&_button]:pointer-events-auto">
          {/* Copy */}
          <motion.div style={{ y: yText, opacity }} className="md:col-span-6">
           {/* Brand lockup: the rotating seal sits left of the eyebrow, vertically
@@ -97,9 +97,22 @@ export default function Hero() {
               <Rule /> Maison de parfum · Cairo
             </Eyebrow>
           </motion.div>
-           <h1 className="display mt-8 text-[17vw] leading-[0.86] md:text-[7.6rem] lg:text-[8.8rem]">
-             {["Seal", "your", "story."].map((w, i) => (
-               <span key={w} className="block overflow-hidden">
+          {/* Compact: the bottle's projected band. BottleStage measures this
+              element and fits the live 3D bottle exactly into it (centered,
+              full cap-to-base); the headline starts below it, so the compact
+              hero reads: eyebrow → bottle → headline → subcopy → CTAs.
+              Cinematic separation glows live INSIDE the band so they track
+              the bottle at every width: a faint warm radial behind it and a
+              soft warm contact glow at its base (no floating-sticker look).
+              They sit under the canvas (copy layer z-2 < canvas z-3). Desktop
+              keeps its approved hero grade untouched (band is hidden). */}
+          <div aria-hidden data-bottle-band className="relative mt-[2svh] h-[33svh] md:hidden">
+            <div className="absolute left-1/2 top-[2%] h-[112%] w-[130vw] -translate-x-1/2 bg-[radial-gradient(closest-side,rgba(201,138,58,0.20),rgba(201,138,58,0.06)_58%,transparent_78%)]" />
+            <div className="absolute bottom-[-5%] left-1/2 h-[17%] w-[74vw] -translate-x-1/2 bg-[radial-gradient(50%_100%_at_50%_50%,rgba(227,169,74,0.34),rgba(227,169,74,0.10)_55%,transparent_78%)] blur-md" />
+          </div>
+          <h1 className="display mt-14 text-[17vw] leading-[0.86] md:mt-8 md:text-[7.6rem] lg:text-[8.8rem]">
+            {["Seal", "your", "story."].map((w, i) => (
+              <span key={w} className="block overflow-hidden">
                 <motion.span
                   className={i === 2 ? "block italic text-gold-2" : "block"}
                   initial={{ y: "110%" }}
@@ -161,17 +174,18 @@ export default function Hero() {
           once the capability check passes — the fallback plate replaces it. */}
       {stageReady && !fallback && <BottleStage eventSourceRef={heroRef} />}
       {/* WebGL-fail / reduced-motion fallback — ONLY in the fallback: a framed
-          plate with the featured product photo floats where the 3D bottle
-          would (phone: top-right clear of the headline and paragraph; desktop:
-          right-of-center, clear of both the copy column and the caption). No
-          seal at phone widths, and the whole stage stays unmounted so the
-          LIFT THE CAP / PRESS THE ATOMIZER pills never appear. */}
+          plate with the featured product photo sits exactly where the 3D
+          bottle would (compact: centered in the bottle band between the
+          eyebrow and the headline; desktop: right-of-center, clear of both
+          the copy column and the caption). No seal at phone widths, and the
+          whole stage stays unmounted so the LIFT THE CAP / PRESS THE ATOMIZER
+          pills never appear. */}
       {fallback ? (
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1.2, ease: LUX, delay: D }}
-          className="pointer-events-none absolute right-4 top-[20%] z-[2] h-[24svh] max-w-[176px] aspect-[4/5] md:left-[max(44%,32rem)] md:right-auto md:top-[calc(53%-26svh)] md:h-[52svh] md:max-w-[26rem]"
+          className="pointer-events-none absolute left-1/2 top-[calc(128px+2svh)] z-[2] h-[33svh] max-w-[240px] aspect-[4/5] -translate-x-1/2 md:left-[max(44%,32rem)] md:right-auto md:top-[calc(53%-26svh)] md:h-[52svh] md:max-w-[26rem] md:translate-x-0"
         >
           <div className="grain relative h-full w-full overflow-hidden rounded-sm bg-[#efe9dc] shadow-[0_60px_120px_-40px_rgba(0,0,0,0.85)] ring-1 ring-gold/15">
             <img src={featured.image} alt={featured.name} className="absolute inset-0 h-full w-full object-cover plate-blend" />

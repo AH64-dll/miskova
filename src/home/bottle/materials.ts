@@ -48,8 +48,8 @@ export function createGlassMaterial(): SweepMaterial {
     metalness: 0.0,
     ior: 1.52, // Optical crown glass / flacon crystal
     thickness: 0.38, // Physical volume depth for realistic internal refraction
-    attenuationColor: new THREE.Color("#fffdf8"),
-    attenuationDistance: 1.8,
+    attenuationColor: new THREE.Color("#fff4dc"),
+    attenuationDistance: 1.15,
     specularIntensity: 1.3,
     specularColor: new THREE.Color("#ffffff"),
     clearcoat: 1.0,
@@ -137,7 +137,7 @@ uniform float uHeightScale;`,
   };
 
   // Distinct cache key so the patched program is never shared with a stock physical material.
-  material.customProgramCacheKey = () => "miskova-glass-sweep-v5";
+  material.customProgramCacheKey = () => "miskova-glass-sweep-v6";
   return material;
 }
 
