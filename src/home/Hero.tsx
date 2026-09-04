@@ -2,7 +2,7 @@
 
  import { motion, useMotionValueEvent, useScroll, useTransform } from "motion/react";
  import dynamic from "next/dynamic";
- import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
  import type { RefObject } from "react";
  import { brand, bySlug } from "@/data/products";
  import { scrollToId, useStore } from "@/components/store";
@@ -27,7 +27,38 @@ export default function Hero() {
 
   const { scrollY } = useScroll();
   const yText = useTransform(scrollY, [0, 700], [0, 120]);
-   const opacity = useTransform(scrollY, [0, 500], [1, 0]);
+  const opacity = useTransform(scrollY, [0, 500], [1, 0]);
+  // Mirrors BottleStage's webglAllowed check: when the live stage cannot run
+  // (no WebGL, reduced motion, save-data) Hero renders a framed product plate
+  // instead of the canvas and skips the 3D mount entirely, so the journey
+  // pills never appear over a dead stage. Viewport width is deliberately NOT
+  // a trigger — narrow phones still get the live bottle.
+  const [fallback, setFallback] = useState(false);
+  const [stageReady, setStageReady] = useState(false);
+  useEffect(() => {
+    let noWebGL = false;
+    try {
+      const canvas = document.createElement("canvas");
+      noWebGL = !canvas.getContext("webgl2") && !canvas.getContext("webgl");
+    } catch {
+      noWebGL = true;
+    }
+    const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const sync = () => {
+      const saveData =
+        (navigator as Navigator & { connection?: { saveData?: boolean } }).connection
+          ?.saveData === true;
+      setFallback(noWebGL || motionQuery.matches || saveData);
+    };
+    sync();
+    motionQuery.addEventListener("change", sync);
+    return () => motionQuery.removeEventListener("change", sync);
+  }, []);
+  useEffect(() => {
+    // Mount the 3D stage only after the capability check settles, so a phone
+    // without WebGL never spins up a doomed canvas context.
+    if (!fallback) setStageReady(true);
+  }, [fallback]);
 
    // (Pointer parallax for the bottle lives in the 3D scene via journeyStore;
    // no DOM tilt wrapper remains — the canvas is full-bleed.)
@@ -46,11 +77,26 @@ export default function Hero() {
        <div className="pointer-events-none relative z-[2] mx-auto grid min-h-[100svh] max-w-[1600px] grid-cols-1 items-center gap-10 px-6 pb-28 pt-32 md:grid-cols-12 md:px-10 md:pb-16 [&_a]:pointer-events-auto [&_button]:pointer-events-auto">
          {/* Copy */}
          <motion.div style={{ y: yText, opacity }} className="md:col-span-6">
-           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, ease: LUX, delay: D + 0.2 }}>
-             <Eyebrow className="text-gold">
-               <Rule /> Maison de parfum · Cairo
-             </Eyebrow>
-           </motion.div>
+          {/* Brand lockup: the rotating seal sits left of the eyebrow, vertically
+              centered on it. The eyebrow is indented (md:pl-24) so the seal
+              occupies the left margin without growing the row height or
+              touching the headline below. Never rendered on phone. */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, ease: LUX, delay: D + 0.2 }} className="relative md:pl-24">
+            <div className="pointer-events-none absolute left-0 top-1/2 hidden h-20 w-20 -translate-y-[60%] md:block" data-hero-seal>
+              <svg viewBox="0 0 100 100" className="h-full w-full animate-spin-slow text-gold/80">
+                <defs>
+                  <path id="circ" d="M50,50 m-38,0 a38,38 0 1,1 76,0 a38,38 0 1,1 -76,0" />
+                </defs>
+                <text className="font-sans text-[8.2px] uppercase tracking-[0.32em]" fill="currentColor">
+                  <textPath href="#circ">Miskova · Seal your story · Miskova · Chapters ·</textPath>
+                </text>
+              </svg>
+              <span className="absolute inset-0 flex items-center justify-center font-display text-2xl italic text-gold">M</span>
+            </div>
+            <Eyebrow className="text-gold">
+              <Rule /> Maison de parfum · Cairo
+            </Eyebrow>
+          </motion.div>
            <h1 className="display mt-8 text-[17vw] leading-[0.86] md:text-[7.6rem] lg:text-[8.8rem]">
              {["Seal", "your", "story."].map((w, i) => (
                <span key={w} className="block overflow-hidden">
@@ -87,20 +133,6 @@ export default function Hero() {
              is full-bleed (mounted below); the monogram + featured caption stay
              in normal flow at layer [2], under the canvas. */}
          <div className="relative md:col-span-6 md:col-start-7 lg:col-span-6 lg:col-start-7">
-           {/* rotating seal — parked low-left of the column, below the
-               headline and left of the bottle, so it touches neither */}
-           <div className="pointer-events-none absolute -left-12 top-48 hidden h-28 w-28 md:block" data-hero-seal>
-             <svg viewBox="0 0 100 100" className="h-full w-full animate-spin-slow text-gold/80">
-               <defs>
-                 <path id="circ" d="M50,50 m-38,0 a38,38 0 1,1 76,0 a38,38 0 1,1 -76,0" />
-               </defs>
-               <text className="font-sans text-[8.2px] uppercase tracking-[0.32em]" fill="currentColor">
-                 <textPath href="#circ">Miskova · Seal your story · Miskova · Chapters ·</textPath>
-               </text>
-             </svg>
-             <span className="absolute inset-0 flex items-center justify-center font-display text-2xl italic text-gold">M</span>
-           </div>
-
            {/* Featured context caption — right-aligned clear of the seal */}
            <div className="relative z-10 ml-auto mt-2 flex max-w-[300px] items-end justify-between gap-4">
              <div className="min-w-0">
@@ -125,9 +157,28 @@ export default function Hero() {
          </div>
       </div>
 
-       {/* [3] full-bleed bottle canvas (own stacking layer, z-[3]);
-           [4] its LIFT THE CAP / PRESS THE ATOMIZER pills render above the canvas */}
-       <BottleStage eventSourceRef={heroRef} />
+      {/* [3] full-bleed bottle canvas (own stacking layer, z-[3]); only mounted
+          once the capability check passes — the fallback plate replaces it. */}
+      {stageReady && !fallback && <BottleStage eventSourceRef={heroRef} />}
+      {/* WebGL-fail / reduced-motion fallback — ONLY in the fallback: a framed
+          plate with the featured product photo floats where the 3D bottle
+          would (phone: top-right clear of the headline and paragraph; desktop:
+          right-of-center, clear of both the copy column and the caption). No
+          seal at phone widths, and the whole stage stays unmounted so the
+          LIFT THE CAP / PRESS THE ATOMIZER pills never appear. */}
+      {fallback ? (
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1.2, ease: LUX, delay: D }}
+          className="pointer-events-none absolute right-4 top-[20%] z-[2] h-[24svh] max-w-[176px] aspect-[4/5] md:left-[max(44%,32rem)] md:right-auto md:top-[calc(53%-26svh)] md:h-[52svh] md:max-w-[26rem]"
+        >
+          <div className="grain relative h-full w-full overflow-hidden rounded-sm bg-[#efe9dc] shadow-[0_60px_120px_-40px_rgba(0,0,0,0.85)] ring-1 ring-gold/15">
+            <img src={featured.image} alt={featured.name} className="absolute inset-0 h-full w-full object-cover plate-blend" />
+            <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_80%_at_50%_100%,rgba(0,0,0,0.10),transparent_60%)]" />
+          </div>
+        </motion.div>
+      ) : null}
 
        {/* Bottom strip: USPs from the original banner + scroll cue */}
        <motion.div

@@ -509,7 +509,9 @@ function isDescendant(object: THREE.Object3D, ancestor: THREE.Object3D): boolean
       const saveData =
         (navigator as Navigator & { connection?: { saveData?: boolean } }).connection
           ?.saveData === true;
-      const narrow = window.innerWidth < 360;
+      // No width floor: the compact presentation is verified to 320 (the exact
+      // viewport Chrome's device emulation opens with) — a floor here silently
+      // disabled the stage on phones users preview first.
       let noWebGL = false;
       try {
         const canvas = document.createElement("canvas");
@@ -517,7 +519,7 @@ function isDescendant(object: THREE.Object3D, ancestor: THREE.Object3D): boolean
       } catch {
         noWebGL = true;
       }
-      setWebglAllowed(!motionQuery.matches && !saveData && !narrow && !noWebGL);
+      setWebglAllowed(!motionQuery.matches && !saveData && !noWebGL);
     };
     sync();
     mobileQuery.addEventListener("change", sync);
@@ -667,10 +669,12 @@ function isDescendant(object: THREE.Object3D, ancestor: THREE.Object3D): boolean
       >
         {control.label}
       </button>
-      <div className="bottleStage__loading" role="status" aria-live="polite">
-        <span aria-hidden="true" />
-        Preparing the bottle
-      </div>
+      {shouldMount && !ready && (
+        <div className="bottleStage__loading" role="status" aria-live="polite">
+          <span aria-hidden="true" />
+          Preparing the bottle
+        </div>
+      )}
       <p className="bottleStage__error">
         The 3D composition could not be loaded. The chapters are still available below.
       </p>

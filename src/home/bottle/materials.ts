@@ -44,17 +44,17 @@ export function createGlassMaterial(): SweepMaterial {
   const material = new THREE.MeshPhysicalMaterial({
     color: new THREE.Color("#ffffff"),
     transmission: 0.97,
-    roughness: 0.032,
+    roughness: 0.022,
     metalness: 0.0,
     ior: 1.52, // Optical crown glass / flacon crystal
     thickness: 0.38, // Physical volume depth for realistic internal refraction
-    attenuationColor: new THREE.Color("#faf3e4"),
-    attenuationDistance: 0.85,
+    attenuationColor: new THREE.Color("#fffdf8"),
+    attenuationDistance: 1.8,
     specularIntensity: 1.3,
     specularColor: new THREE.Color("#ffffff"),
     clearcoat: 1.0,
     clearcoatRoughness: 0.02,
-    envMapIntensity: 3.2,
+    envMapIntensity: 2.7,
     side: THREE.FrontSide,
     flatShading: false,
     transparent: true,
@@ -113,11 +113,11 @@ uniform float uHeightScale;`,
   material.roughness = mix(material.roughness, 0.025 + sweepGrain * 0.025, sweep);
   // Faint static crystal grain so broad highlights never read as flat plastic.
   float grain = fract(sin(vSweepHeight * 913.7) * 43758.5);
-  material.roughness = clamp(material.roughness + (grain - 0.5) * 0.012, 0.02, 0.09);
+  material.roughness = clamp(material.roughness + (grain - 0.5) * 0.01, 0.018, 0.034);
   material.clearcoat = mix(material.clearcoat, 1.0, sweep);
 
   // Scent burst: a short warm bloom lifting the whole body
-  material.roughness = mix(material.roughness, 0.06, uSweepBloom * 0.35);
+  material.roughness = mix(material.roughness, 0.04, uSweepBloom * 0.35);
   material.clearcoat = mix(material.clearcoat, 1.0, uSweepBloom * 0.5);
   material.clearcoatRoughness = mix(material.clearcoatRoughness, 0.03, uSweepBloom * 0.45);
 }`,
@@ -137,7 +137,7 @@ uniform float uHeightScale;`,
   };
 
   // Distinct cache key so the patched program is never shared with a stock physical material.
-  material.customProgramCacheKey = () => "miskova-glass-sweep-v4";
+  material.customProgramCacheKey = () => "miskova-glass-sweep-v5";
   return material;
 }
 
@@ -175,7 +175,7 @@ export function createJuiceMaterial(color = FLUID_COLORS["Liquid-Gold"]): JuiceM
     color: juiceColor,
     emissive: new THREE.Color("#532b06"),
     emissiveIntensity: 0.5,
-    roughness: 0.28,
+    roughness: 0.14,
     metalness: 0.0,
     ior: 1.39, // Perfume essential oil refractive index
     // TRANSMISSION PASS CONTRACT: must stay 0. In three r185, any material with

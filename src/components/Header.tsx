@@ -124,11 +124,15 @@ export default function Header() {
           {/* Wordmark */}
           <button
             onClick={() => (pathname === "/" ? window.scrollTo({ top: 0, behavior: "smooth" }) : router.push("/"))}
-            className="absolute left-1/2 flex -translate-x-1/2 items-center gap-3"
+            className="absolute left-1/2 flex -translate-x-1/2 items-center gap-2 sm:gap-3"
             aria-label="Miskova home"
           >
-            <Monogram className={cn("h-8 w-8", dark ? "text-gold" : "text-ink")} />
-            <span className="font-display text-[1.55rem] font-medium tracking-[0.32em] leading-none">MISKOVA</span>
+            <Monogram className={cn("h-7 w-7 sm:h-8 sm:w-8", dark ? "text-gold" : "text-ink")} />
+            {/* Compact phones: the centered lockup must clear the search/bag
+                controls (they start ~x224 at 320) — shrink type below sm. */}
+            <span className="font-display text-[0.95rem] font-medium tracking-[0.16em] leading-none sm:text-[1.3rem] sm:tracking-[0.28em] md:text-[1.55rem] md:tracking-[0.32em]">
+              MISKOVA
+            </span>
           </button>
 
           {/* Right */}
