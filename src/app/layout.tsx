@@ -4,7 +4,7 @@ import Curtain from "@/components/Curtain";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductDetail from "@/components/ProductDetail";
-import MobileTabBar from "@/components/MobileTabBar";
+import BagDrawer from "@/components/BagDrawer";
 import { StoreProvider } from "@/components/store";
 import "./globals.css";
 
@@ -44,7 +44,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
           <Footer />
           <ProductDetail />
-          <MobileTabBar />
+          <BagDrawer />
         </StoreProvider>
       </body>
     </html>

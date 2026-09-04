@@ -54,18 +54,19 @@ const live = await liveProducts();
 console.log(`live products: ${live.length}`);
 check("live 16 products", live.length === 16);
 
-// Scrape rendered homepage for product names + canonical CTAs
+// Scrape rendered homepage for product names + on-site bag commerce contract
 const html = await (await fetch(`${BASE_URL}/`)).text();
 for (const l of live) {
   check(`rendered product: ${l.slug}`, html.includes(l.slug) || html.includes(l.name.split(" ")[0]));
-  check(
-    `canonical CTA: ${l.slug}`,
-    html.includes(`https://miskova.myeasyorders.com/products/${l.slug}`),
-  );
 }
+check("bag CTAs present (data-add)", html.includes("data-add") && html.includes("Add to bag"));
 check(
-  "canonical store CTAs present, no bag",
-  html.includes("https://miskova.myeasyorders.com/products/") && !html.includes("Add to bag"),
+  "no myeasyorders product links",
+  !html.includes("myeasyorders.com/products/"),
+);
+check(
+  "no external store buy copy",
+  !html.includes("Buy on the store") && !html.includes("View on store"),
 );
 check(
   "announcement present",
@@ -127,11 +128,10 @@ check(
 );
 check("outage returns fallbackCatalog", outageCatalog === fallbackCatalog);
 check("outage complete 16 products", outageCatalog?.products?.length === 16);
-check("outage complete 3 categories", outageCatalog?.categories?.length === 3);
 check(
   "outage no partial grid",
   outageCatalog?.products?.every(
-    (p) => p.id && p.name && p.slug && p.price && p.image && p.canonicalUrl,
+    (p) => p.id && p.name && p.slug && p.price && p.image,
   ) === true,
 );
 

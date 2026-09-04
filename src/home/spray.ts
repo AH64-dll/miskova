@@ -80,19 +80,20 @@ const fragmentShader = /* glsl */ `
     float fade = 1.0 - smoothstep(0.60, 1.0, normAge);
     float ignition = exp(-normAge * 8.0);
 
-    // Crimson Bloom mist — orange/crimson plume, no ivory foam
-    vec3 coreAmber     = vec3(0.88, 0.42, 0.14);
-    vec3 aerosolHeart = vec3(0.80, 0.32, 0.12);
-    vec3 crimsonVeil  = vec3(0.48, 0.08, 0.10);
+     // Warm golden-hour mist — amber core dissolving into a champagne veil.
+     // Stays luminous against both the light mist band and the dark floor.
+     vec3 coreAmber     = vec3(0.98, 0.80, 0.52);
+     vec3 aerosolHeart = vec3(0.94, 0.70, 0.42);
+     vec3 crimsonVeil  = vec3(0.82, 0.55, 0.32);
 
-    vec3 color = mix(coreAmber, aerosolHeart, smoothstep(0.03, 0.28, normAge));
-    color = mix(color, crimsonVeil, smoothstep(0.25, 0.85, normAge) * (0.65 + fract(vSeed * 3.1) * 0.35));
+     vec3 color = mix(coreAmber, aerosolHeart, smoothstep(0.03, 0.28, normAge));
+     color = mix(color, crimsonVeil, smoothstep(0.25, 0.85, normAge) * (0.65 + fract(vSeed * 3.1) * 0.35));
 
-    // Core burst intensity + optical sparkle twinkle
-    color += aerosolHeart * ignition * 0.55;
-    color += aerosolHeart * (vSparkle * 0.22 * (1.0 - normAge));
-    float baseOpacity = mix(0.42, 0.22, vMist);
-    float alpha = disc * appear * fade * (baseOpacity + ignition * 0.22 + core * 0.12);
+     // Core burst intensity + optical sparkle twinkle
+     color += aerosolHeart * ignition * 0.55;
+     color += aerosolHeart * (vSparkle * 0.22 * (1.0 - normAge));
+     float baseOpacity = mix(0.30, 0.16, vMist);
+     float alpha = disc * appear * fade * (baseOpacity + ignition * 0.22 + core * 0.12);
     
     if (alpha < 0.002) discard;
     gl_FragColor = vec4(color, alpha);
@@ -186,9 +187,9 @@ export function createSpraySystem(mobile: boolean, pixelRatio: number): SpraySys
         cursor = (cursor + 1) % capacity;
         const p = index * 3;
 
-        const isVapor = i % 3 === 0 || Math.random() < 0.35;
-        const speed = isVapor ? 3.2 + Math.random() * 2.4 : 4.5 + Math.random() * 2.8;
-
+         const isVapor = i % 3 === 0 || Math.random() < 0.35;
+         // Full-bleed hero: faster jet so mist visibly crosses the banner width.
+         const speed = isVapor ? 5.4 + Math.random() * 3.4 : 7.2 + Math.random() * 3.6;
         // Tight conical spray cone (~14 degrees)
         const coneAngle = (Math.random() * 0.14 + (isVapor ? 0.06 : 0.015)) * Math.PI;
         const radialAngle = Math.random() * Math.PI * 2.0;
@@ -236,24 +237,29 @@ export function createSpraySystem(mobile: boolean, pixelRatio: number): SpraySys
         const age = ages[i];
         const seed = seeds[i] * 24.5;
         
-        // Aerodynamic air drag deceleration: initial high speed rapidly slows into a soft floating cloud
-        const drag = age < 0.15 ? 5.2 : age < 0.8 ? 2.8 : 1.5;
-        const dragDecay = Math.exp(-drag * step);
+         // Aerodynamic air drag deceleration: initial high speed rapidly slows
+         // into a soft floating cloud. Full-bleed: lighter mid-flight drag so
+         // the plume travels across the hero, plus a steady screen-left (-x)
+         // drift so the burst sweeps over the headline side.
+         const drag = age < 0.15 ? 5.2 : age < 1.1 ? 1.7 : 1.1;
+         const dragDecay = Math.exp(-drag * step);
 
-        velocities[p]     *= dragDecay;
-        velocities[p + 1] *= dragDecay;
-        velocities[p + 2] *= dragDecay;
+         velocities[p] *= dragDecay;
+         velocities[p + 1] *= dragDecay;
+         velocities[p + 2] *= dragDecay;
 
-        // Upward thermal buoyancy + gentle 3D vortex turbulence
-        const turbulence = Math.min(1.0, age * 1.8);
-        velocities[p + 1] += (0.090 + mists[i] * 0.055) * step; // buoyant rise
-        velocities[p]     += Math.sin(time * 2.5 + seed) * 0.18 * turbulence * step;
-        velocities[p + 1] += Math.cos(time * 2.0 + seed * 1.4) * 0.14 * turbulence * step;
-        velocities[p + 2] += Math.sin(time * 2.2 + seed * 1.1) * 0.20 * turbulence * step;
+         // Upward thermal buoyancy + gentle 3D vortex turbulence, plus a steady
+         // screen-left (-x) drift so the burst sweeps across the whole banner.
+         const turbulence = Math.min(1.0, age * 1.8);
+         velocities[p] += (-0.85 - mists[i] * 0.55) * step; // hero-wide drift
+         velocities[p + 1] += (0.09 + mists[i] * 0.055) * step; // buoyant rise
+         velocities[p] += Math.sin(time * 2.5 + seed) * 0.18 * turbulence * step;
+         velocities[p + 1] += Math.cos(time * 2.0 + seed * 1.4) * 0.14 * turbulence * step;
+         velocities[p + 2] += Math.sin(time * 2.2 + seed * 1.1) * 0.2 * turbulence * step;
 
-        // Pointer air current displacement
-        velocities[p]     += pointerVelocityX * 0.0045 * turbulence * step;
-        velocities[p + 1] -= pointerVelocityY * 0.0035 * turbulence * step;
+         // Pointer air current displacement
+         velocities[p] += pointerVelocityX * 0.0045 * turbulence * step;
+         velocities[p + 1] -= pointerVelocityY * 0.0035 * turbulence * step;
 
         positions[p]     += velocities[p] * step;
         positions[p + 1] += velocities[p + 1] * step;

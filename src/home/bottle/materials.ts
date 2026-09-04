@@ -33,7 +33,7 @@ export type JuiceMaterial = THREE.MeshPhysicalMaterial & {
   userData: { slosh?: JuiceUniforms };
 };
 
-const MISKOVA_GOLD = new THREE.Color("#d4af37");
+const MISKOVA_GOLD = new THREE.Color("#c9a961");
 
 /**
  * Optical Flacon Crystal Glass:
@@ -48,7 +48,7 @@ export function createGlassMaterial(): SweepMaterial {
     metalness: 0.0,
     ior: 1.52, // Optical crown glass / flacon crystal
     thickness: 0.38, // Physical volume depth for realistic internal refraction
-    attenuationColor: new THREE.Color("#fbf7f0"),
+    attenuationColor: new THREE.Color("#faf3e4"),
     attenuationDistance: 0.85,
     specularIntensity: 1.3,
     specularColor: new THREE.Color("#ffffff"),
@@ -110,10 +110,11 @@ uniform float uHeightScale;`,
   float sweepBand = exp(-sweepDistance * sweepDistance);
   float sweepGrain = 0.5 + 0.5 * sin(vSweepHeight * 120.0 + uSweepPhase);
   float sweep = sweepBand * uSweepStrength;
-
   material.roughness = mix(material.roughness, 0.025 + sweepGrain * 0.025, sweep);
+  // Faint static crystal grain so broad highlights never read as flat plastic.
+  float grain = fract(sin(vSweepHeight * 913.7) * 43758.5);
+  material.roughness = clamp(material.roughness + (grain - 0.5) * 0.012, 0.02, 0.09);
   material.clearcoat = mix(material.clearcoat, 1.0, sweep);
-  material.clearcoatRoughness = mix(material.clearcoatRoughness, 0.03, sweep);
 
   // Scent burst: a short warm bloom lifting the whole body
   material.roughness = mix(material.roughness, 0.06, uSweepBloom * 0.35);
@@ -141,17 +142,40 @@ uniform float uHeightScale;`,
 }
 
 /**
- * Amber/Crimson Liquid:
- * Luminous ruby-crimson and golden-amber extrait liquid matching Crimson Bloom.
- * Simulates internal volumetric depth absorption: deep rich ruby-crimson core with
- * glowing golden-amber edge scattering and capillary meniscus highlights.
+ * Honey-Amber Extrait Liquid (photo-faithful):
+ * Product photos show a pale golden-yellow juice (Liquid Gold ~#cabb83 in thin
+ * sections over white, deepening to rich honey-amber in volume) inside clear
+ * flacon glass — NOT red/salmon. The juice mesh stays opaque on purpose
+ * (TRANSMISSION PASS CONTRACT below) and the "liquid behind glass" look comes
+ * from a wet low-roughness PBR surface, warm emissive depth glow, and a
+ * Fresnel honey edge-scatter patch, all refracted through the glass shell.
  */
-export function createJuiceMaterial(color = "#932800"): JuiceMaterial {
+export const FLUID_COLORS: Record<string, string> = {
+  "Liquid-Gold": "#9c6414",
+  "Crimson-Bloom": "#a8430f",
+  "Exotic-Dusk": "#b57a12",
+  Heir: "#9a6d1c",
+  "Ivory-Nectar": "#9c8236",
+  "Sweet-Empire": "#a17c33",
+  "Vintage-Lounge": "#a58236",
+  "Third-Act": "#a3833d",
+  "Day-and-Night": "#96693a",
+  "Eternal-Knot": "#8c682e",
+  "Heavens-cut": "#977a28",
+  "The-Pequod": "#b09c55",
+  "Fruit-Fusion": "#ab9850",
+  "Pacific-Sol": "#a8934c",
+  "Y-code": "#9c8845",
+  "Spider-bundle": "#915f3d",
+};
+
+export function createJuiceMaterial(color = FLUID_COLORS["Liquid-Gold"]): JuiceMaterial {
+  const juiceColor = new THREE.Color(color);
   const material = new THREE.MeshPhysicalMaterial({
-    color: new THREE.Color(color),
-    emissive: new THREE.Color("#000000"),
-    emissiveIntensity: 0,
-    roughness: 0.6,
+    color: juiceColor,
+    emissive: new THREE.Color("#532b06"),
+    emissiveIntensity: 0.5,
+    roughness: 0.28,
     metalness: 0.0,
     ior: 1.39, // Perfume essential oil refractive index
     // TRANSMISSION PASS CONTRACT: must stay 0. In three r185, any material with
@@ -161,19 +185,19 @@ export function createJuiceMaterial(color = "#932800"): JuiceMaterial {
     // (transmission 0.97) would refract an RT that never contained the liquid,
     // rendering it invisible. Opaque juice is sampled correctly and the glass
     // refracts it. The "liquid look" comes from surface shading + the
-    // Fresnel edge-scatter patch below.
+    // Fresnel honey edge-scatter patch below.
     transmission: 0,
     thickness: 0.32,
     // Volumetric absorption — dormant while transmission is 0 (three only applies
-    // attenuation in the transmissive path). Kept here so re-enabling transmission
-    // later immediately gets correct deep-crimson beer-bottle absorption.
-    attenuationColor: new THREE.Color("#4a0610"),
+    // attenuation in the transmissive path). Honey-amber tint so re-enabling
+    // transmission later immediately gets correct golden absorption.
+    attenuationColor: new THREE.Color("#8a4d0a"),
     attenuationDistance: 0.28,
-    clearcoat: 0,
-    clearcoatRoughness: 0.4,
-    specularIntensity: 0,
-    specularColor: new THREE.Color("#ffc890"),
-    envMapIntensity: 0,
+    clearcoat: 0.55,
+    clearcoatRoughness: 0.18,
+    specularIntensity: 0.9,
+    specularColor: new THREE.Color("#ffd9a0"),
+    envMapIntensity: 0.85,
     transparent: false,
     opacity: 1,
     depthWrite: true,
@@ -220,18 +244,24 @@ transformed.y += sloshDisp + waveRipple;`,
 {
   float NdotV = clamp(dot(geometryNormal, geometryViewDir), 0.0, 1.0);
   float edgeScatter = pow(1.0 - NdotV, 2.4);
-  vec3 coreCrimson = vec3(0.45, 0.09, 0.05);
-  vec3 goldenEdge  = vec3(0.62, 0.22, 0.06);
-  vec3 edgeTint    = mix(coreCrimson, goldenEdge, edgeScatter * 0.4);
+  // Honey-amber core/glow sampled from the product photos: Liquid Gold reads
+  // pale gold (#cabb83) in thin sections, rich honey in volume; Crimson Bloom
+  // glows orange-amber (#c85a25 core). Core stays deep so the body has depth,
+  // edges scatter warm gold light like juice catching the flacon rim.
+  vec3 coreHoney = vec3(0.52, 0.28, 0.06);
+  vec3 goldenEdge = vec3(0.98, 0.68, 0.25);
+  vec3 edgeTint = mix(coreHoney, goldenEdge, edgeScatter * 0.55);
 
-  reflectedLight.directDiffuse += edgeTint * edgeScatter * 0.02;
-  reflectedLight.indirectDiffuse += edgeTint * edgeScatter * 0.02;
-  reflectedLight.indirectSpecular += goldenEdge * edgeScatter * 0.02;
+  reflectedLight.directDiffuse += edgeTint * edgeScatter * 0.06;
+  reflectedLight.indirectDiffuse += edgeTint * edgeScatter * 0.06;
+  reflectedLight.indirectSpecular += goldenEdge * edgeScatter * 0.10;
+  // Warm subsurface-style lift so the face-on body never goes muddy brown.
+  reflectedLight.directDiffuse += coreHoney * 0.05;
 }`,
       );
   };
 
-  material.customProgramCacheKey = () => "miskova-juice-flat-932800-v1";
+  material.customProgramCacheKey = () => "miskova-juice-honey-v1";
   material.toneMapped = false;
   return material;
 }
@@ -250,35 +280,43 @@ export function createCapMaterial(): THREE.MeshPhysicalMaterial {
   });
 }
 
-/** Collar + cap band: polished Miskova house gold with warm specular gleam. */
-export function createCollarMaterial(): THREE.MeshStandardMaterial {
-  return new THREE.MeshStandardMaterial({
-    color: new THREE.Color("#d4af37"),
-    metalness: 0.96,
-    roughness: 0.16,
+/** Collar + cap band: polished Miskova house gold, matched to the site gold
+ *  (#c9a961 family); photo's neck ring reads bright champagne, so the alloy
+ *  leans light-warm rather than deep brass. */
+export function createCollarMaterial(): THREE.MeshPhysicalMaterial {
+  return new THREE.MeshPhysicalMaterial({
+    color: new THREE.Color("#c9a961"),
+    metalness: 1.0,
+    roughness: 0.24,
+    clearcoat: 0.6,
+    clearcoatRoughness: 0.12,
     envMapIntensity: 2.4,
   });
 }
 
 /** Atomizer button: polished jewelry gold with razor-crisp reflection. */
-export function createPushMaterial(): THREE.MeshStandardMaterial {
-  return new THREE.MeshStandardMaterial({
-    color: new THREE.Color("#dfba73"),
-    metalness: 0.98,
-    roughness: 0.12,
+export function createPushMaterial(): THREE.MeshPhysicalMaterial {
+  return new THREE.MeshPhysicalMaterial({
+    color: new THREE.Color("#d8b96a"),
+    metalness: 1.0,
+    roughness: 0.22,
+    clearcoat: 0.5,
+    clearcoatRoughness: 0.1,
     envMapIntensity: 2.6,
   });
 }
 
-/** Label: tactile paper/foil plaque with subtle relief and gold hot-stamped ink. */
+/** Label: black paper plaque with gold hot-stamped foil ink. Mostly dielectric
+ *  paper (low metalness, soft roughness); the foil shimmer comes from the
+ *  texture's gold highlights + clearcoat, not bare metal. */
 export function createLabelMaterial(): THREE.MeshPhysicalMaterial {
   return new THREE.MeshPhysicalMaterial({
-    roughness: 0.36,
-    metalness: 0.22,
-    clearcoat: 0.50,
-    clearcoatRoughness: 0.25,
-    envMapIntensity: 1.2,
-    bumpScale: 0.016,
+    roughness: 0.52,
+    metalness: 0.0,
+    clearcoat: 0.35,
+    clearcoatRoughness: 0.22,
+    envMapIntensity: 1.0,
+    bumpScale: 0.012,
     side: THREE.FrontSide,
     polygonOffset: true,
     polygonOffsetFactor: -2,

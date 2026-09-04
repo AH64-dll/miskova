@@ -81,7 +81,7 @@ export default function Footer() {
         <div className="mt-20 flex flex-col items-start justify-between gap-4 border-t border-cream/10 pt-6 md:flex-row md:items-center">
           <p className="eyebrow text-[10px] text-cream/40">© {new Date().getFullYear()} {brand.fullName}</p>
           <p className="eyebrow text-[10px] text-cream/40">
-            Made by{" "}
+            Website made by{" "}
             <a
               href="https://www.facebook.com/profile.php?id=61574396289127"
               target="_blank"

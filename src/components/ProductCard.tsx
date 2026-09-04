@@ -68,7 +68,7 @@ export default function ProductCard({
   aspect?: string;
 }) {
   const t = theme[persona];
-  const { openProduct } = useStore();
+  const { openProduct, addToBag, setBagOpen } = useStore();
   const pct = discountPct(product);
 
   return (
@@ -105,20 +105,23 @@ export default function ProductCard({
           </span>
         )}
 
-        {/* canonical store CTA */}
+        {/* bag CTA */}
         {product.price != null && (
-          <a
-            href={product.url}
-            target="_blank"
-            rel="noreferrer"
+          <button
+            type="button"
+            data-add={product.slug}
+            onClick={() => {
+              addToBag(product.slug);
+              setBagOpen(true);
+            }}
             className={cn(
               "absolute inset-x-3 bottom-3 flex translate-y-3 items-center justify-center gap-2 py-3 text-[11px] uppercase tracking-[0.28em] opacity-0 transition-all duration-500 ease-[cubic-bezier(.16,1,.3,1)] group-hover:translate-y-0 group-hover:opacity-100 focus:translate-y-0 focus:opacity-100",
               t.add,
               persona === "her" && "inset-x-6 rounded-full",
             )}
           >
-            <Icon.Arrow className="h-3.5 w-3.5" /> View on store
-          </a>
+            <Icon.Bag className="h-3.5 w-3.5" /> Add to bag
+          </button>
         )}
       </div>
 

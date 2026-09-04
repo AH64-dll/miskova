@@ -28,7 +28,7 @@ function Seal({ className }: { className?: string }) {
 }
 
 function BestCard({ product, i }: { product: Product; i: number }) {
-  const { openProduct } = useStore();
+  const { openProduct, addToBag, setBagOpen } = useStore();
   const pct = discountPct(product);
   return (
     <article className="group relative flex w-[78vw] shrink-0 flex-col sm:w-[420px] lg:w-[clamp(280px,40vh,440px)]">
@@ -52,8 +52,16 @@ function BestCard({ product, i }: { product: Product; i: number }) {
         <Price product={product} className="shrink-0 pt-1 text-cream" />
       </div>
       <div className="mt-5 flex flex-wrap items-center gap-3">
-        <Button variant="gold" href={product.url} className="px-6 py-3">
-          Buy on the store <Icon.Arrow className="h-3.5 w-3.5" />
+        <Button
+          variant="gold"
+          className="px-6 py-3"
+          dataAdd={product.slug}
+          onClick={() => {
+            addToBag(product.slug);
+            setBagOpen(true);
+          }}
+        >
+          Add to bag <Icon.Bag className="h-3.5 w-3.5" />
         </Button>
         <Button variant="ghost-light" onClick={() => openProduct(product.slug)}>
           Read the chapter <Icon.Arrow className="h-3.5 w-3.5" />
@@ -62,45 +70,8 @@ function BestCard({ product, i }: { product: Product; i: number }) {
     </article>
   );
 }
-
-export default function BestSellersSection() {
-  const items = collections.best;
-  const sectionRef = useRef<HTMLDivElement>(null);
-  const trackRef = useRef<HTMLDivElement>(null);
-  const [dist, setDist] = useState(0);
-  const [desktop, setDesktop] = useState(false);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(min-width: 1024px)");
-    const upd = () => setDesktop(mq.matches);
-    upd();
-    mq.addEventListener("change", upd);
-    return () => mq.removeEventListener("change", upd);
-  }, []);
-
-  useEffect(() => {
-    if (!desktop) return;
-    const measure = () => {
-      const t = trackRef.current;
-      if (!t) return;
-      setDist(Math.max(0, t.scrollWidth - window.innerWidth));
-    };
-    measure();
-    const ro = new ResizeObserver(measure);
-    if (trackRef.current) ro.observe(trackRef.current);
-    window.addEventListener("resize", measure);
-    return () => {
-      ro.disconnect();
-      window.removeEventListener("resize", measure);
-    };
-  }, [desktop, items.length]);
-
-  const { scrollYProgress } = useScroll({ target: sectionRef, offset: ["start start", "end end"] });
-  const xRaw = useTransform(scrollYProgress, [0, 1], [0, -dist]);
-  const x = useSpring(xRaw, { stiffness: 90, damping: 26, mass: 0.4 });
-  const progress = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
-
-  const Intro = (
+function BestIntro() {
+  return (
     <div className="flex w-[82vw] shrink-0 flex-col justify-between sm:w-[400px] lg:w-[460px] lg:pr-16">
       <div>
         <Eyebrow className="text-gold">
@@ -120,6 +91,96 @@ export default function BestSellersSection() {
       </div>
     </div>
   );
+}
+
+function DesktopPinnedBest({ items }: { items: Product[] }) {
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [dist, setDist] = useState(0);
+
+  useEffect(() => {
+    const measure = () => {
+      const t = trackRef.current;
+      if (!t) return;
+      setDist(Math.max(0, t.scrollWidth - window.innerWidth));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    if (trackRef.current) ro.observe(trackRef.current);
+    window.addEventListener("resize", measure);
+    window.addEventListener("orientationchange", measure);
+    // Re-measure once webfonts / images settle so the end position stays exact.
+    const t1 = window.setTimeout(measure, 300);
+    const t2 = window.setTimeout(measure, 1200);
+    if (typeof document !== "undefined" && document.fonts) {
+      document.fonts.ready.then(measure).catch(() => {});
+    }
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", measure);
+      window.removeEventListener("orientationchange", measure);
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+    };
+  }, [items.length]);
+
+  // This component mounts only when `desktop` is already true, so the target
+  // ref is attached on first commit and useScroll measures a live element.
+  const { scrollYProgress } = useScroll({ target: sectionRef, offset: ["start start", "end end"] });
+  const xRaw = useTransform(scrollYProgress, [0, 1], [0, -dist]);
+  const x = useSpring(xRaw, { stiffness: 90, damping: 26, mass: 0.4 });
+  const progress = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
+
+  return (
+    <div ref={sectionRef} style={{ height: `${Math.max(220, items.length * 62)}vh` }} className="relative">
+      <div className="sticky top-0 flex h-screen flex-col justify-center overflow-hidden">
+        <motion.div ref={trackRef} style={{ x }} className="flex items-stretch gap-14 px-10 pt-10 will-change-transform">
+          <BestIntro />
+          {items.map((p, i) => (
+            <BestCard key={p.slug} product={p} i={i} />
+          ))}
+          <div className="w-10 shrink-0" aria-hidden="true" />
+        </motion.div>
+        {/* progress */}
+        <div className="absolute bottom-10 left-10 right-10 h-px bg-cream/10">
+          <motion.div style={{ width: progress }} className="h-full bg-gold" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MobileBestRow({ items }: { items: Product[] }) {
+  return (
+    <div className="py-24">
+      <Reveal className="px-5">
+        <BestIntro />
+      </Reveal>
+      <div className="no-scrollbar mt-12 flex snap-x snap-mandatory gap-8 overflow-x-auto px-5 pt-10 pb-4">
+        {items.map((p, i) => (
+          <div key={p.slug} className="snap-start">
+            <BestCard product={p} i={i} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+
+export default function BestSellersSection() {
+  const items = collections.best;
+  // SSR-safe initial: server and first client render agree (mobile branch), then
+  // the effect below flips to desktop. DesktopPinnedBest mounts only after the
+  // flip, so its scroll-target ref is attached on its first commit.
+  const [desktop, setDesktop] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const upd = () => setDesktop(mq.matches);
+    upd();
+    mq.addEventListener("change", upd);
+    return () => mq.removeEventListener("change", upd);
+  }, []);
 
   return (
     <section id="best" data-tone="dark" className="grain relative bg-ink text-cream">
@@ -128,32 +189,9 @@ export default function BestSellersSection() {
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold/60 to-transparent" />
 
       {desktop ? (
-        <div ref={sectionRef} style={{ height: `${Math.max(220, items.length * 62)}vh` }} className="relative">
-          <div className="sticky top-0 flex h-screen flex-col justify-center overflow-hidden">
-            <motion.div ref={trackRef} style={{ x }} className="flex items-stretch gap-14 px-10 pt-10 will-change-transform">
-              {Intro}
-              {items.map((p, i) => (
-                <BestCard key={p.slug} product={p} i={i} />
-              ))}
-              <div className="w-10 shrink-0" />
-            </motion.div>
-            {/* progress */}
-            <div className="absolute bottom-10 left-10 right-10 h-px bg-cream/10">
-              <motion.div style={{ width: progress }} className="h-full bg-gold" />
-            </div>
-          </div>
-        </div>
+        <DesktopPinnedBest key="pinned" items={items} />
       ) : (
-        <div className="py-24">
-          <Reveal className="px-5">{Intro}</Reveal>
-          <div ref={trackRef} className="no-scrollbar mt-12 flex snap-x snap-mandatory gap-8 overflow-x-auto px-5 pt-10 pb-4">
-            {items.map((p, i) => (
-              <div key={p.slug} className="snap-start">
-                <BestCard product={p} i={i} />
-              </div>
-            ))}
-          </div>
-        </div>
+        <MobileBestRow key="row" items={items} />
       )}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-gold/60 to-transparent" />
     </section>

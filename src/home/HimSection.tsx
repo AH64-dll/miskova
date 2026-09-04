@@ -10,7 +10,7 @@ import { Button, Eyebrow, Icon, Item, Price, Reveal, Rule, Stagger } from "@/com
 
 export default function HimSection() {
   const [featured, ...rest] = collections.him;
-  const { openProduct } = useStore();
+  const { openProduct, addToBag, setBagOpen } = useStore();
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
   const y = useTransform(scrollYProgress, [0, 1], ["-10%", "10%"]);
@@ -86,8 +86,15 @@ export default function HimSection() {
             )}
             <div className="mt-8 flex items-center gap-6">
               <Price product={featured} size="lg" className="font-display" />
-              <Button variant="gold" href={featured.url}>
-                Buy on the store <Icon.Arrow className="h-3.5 w-3.5" />
+              <Button
+                variant="gold"
+                dataAdd={featured.slug}
+                onClick={() => {
+                  addToBag(featured.slug);
+                  setBagOpen(true);
+                }}
+              >
+                Add to bag <Icon.Bag className="h-3.5 w-3.5" />
               </Button>
             </div>
           </div>

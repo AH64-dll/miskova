@@ -11,7 +11,7 @@ import { Button, Eyebrow, Icon, Item, Price, Reveal, Rule, Stagger } from "@/com
 export default function HerSection() {
   const items = collections.her;
   const feature = items[0];
-  const { openProduct } = useStore();
+  const { openProduct, addToBag, setBagOpen } = useStore();
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
   const y = useTransform(scrollYProgress, [0, 1], ["-6%", "6%"]);
@@ -72,8 +72,16 @@ export default function HerSection() {
             )}
             <div className="mt-8 flex items-center gap-6">
               <Price product={feature} size="lg" tone="dark" className="font-display" />
-              <Button variant="rose" href={feature.url} className="rounded-full">
-                Buy on the store <Icon.Arrow className="h-3.5 w-3.5" />
+              <Button
+                variant="rose"
+                className="rounded-full"
+                dataAdd={feature.slug}
+                onClick={() => {
+                  addToBag(feature.slug);
+                  setBagOpen(true);
+                }}
+              >
+                Add to bag <Icon.Bag className="h-3.5 w-3.5" />
               </Button>
             </div>
           </Reveal>

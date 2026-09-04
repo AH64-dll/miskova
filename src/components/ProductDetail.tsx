@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useMemo } from "react";
-import { bySlug, collections, discountPct, products, type Product } from "@/data/products";
+import { bySlug, collections, discountPct, effectivePrice, formatPrice, products, type Product } from "@/data/products";
 import { useStore } from "@/components/store";
 import { cn } from "@/utils/cn";
 import { Button, Icon, LUX, Price } from "@/components/ui";
@@ -81,9 +81,11 @@ function Panel({
   related: Product[];
   open: (s: string) => void;
 }) {
+  const { addToBag, setBagOpen } = useStore();
   const tone = toneOf(product);
   const t = T[tone];
   const pct = discountPct(product);
+  const waHref = `https://wa.me/201036202634?text=${encodeURIComponent(`Hello Miskova — I'd like to enquire about ${product.name}.`)}`;
   return (
     <motion.div
       initial={{ y: "6%", opacity: 0 }}
@@ -121,11 +123,25 @@ function Panel({
           <h2 className={cn("display mt-4 text-5xl md:text-6xl", tone === "her" && "italic")}>{product.name}</h2>
           <Price product={product} size="lg" tone={tone === "him" ? "light" : "dark"} className="mt-5 font-display" />
 
-          {/* Buy — canonical store checkout */}
+          {/* Buy — on-site bag checkout */}
           <div className="mt-8">
-            <Button variant={t.btn} href={product.url} className="h-12">
-              {product.price == null ? "Enquire on the store" : "Buy on the store"} <Icon.Arrow className="h-3.5 w-3.5" />
-            </Button>
+            {product.price == null ? (
+              <Button variant={t.btn} href={waHref} className="h-12">
+                Enquire on WhatsApp <Icon.Arrow className="h-3.5 w-3.5" />
+              </Button>
+            ) : (
+              <Button
+                variant={t.btn}
+                className="h-12"
+                dataAdd={product.slug}
+                onClick={() => {
+                  addToBag(product.slug);
+                  setBagOpen(true);
+                }}
+              >
+                Add to bag — {formatPrice(effectivePrice(product))} <Icon.Bag className="h-3.5 w-3.5" />
+              </Button>
+            )}
           </div>
 
           {/* Story */}
@@ -183,9 +199,6 @@ function Panel({
           <div className={cn("mt-12 border-t pt-8", t.rule)}>
             <div className="flex items-center justify-between">
               <p className={cn("eyebrow text-[10px]", t.accent)}>Continue reading</p>
-              <a href={product.url} target="_blank" rel="noreferrer" className={cn("link-draw eyebrow text-[10px]", t.sub)}>
-                View on store
-              </a>
             </div>
             <div className="mt-6 grid grid-cols-3 gap-4">
               {related.map((r) => (

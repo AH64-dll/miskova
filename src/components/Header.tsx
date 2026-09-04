@@ -58,7 +58,7 @@ export function useSectionTone() {
 }
 
 export default function Header() {
-  const { searchOpen, setSearchOpen, menuOpen, setMenuOpen } = useStore();
+  const { searchOpen, setSearchOpen, menuOpen, setMenuOpen, bagCount, setBagOpen } = useStore();
   const tone = useSectionTone();
   const router = useRouter();
   const pathname = usePathname();
@@ -138,6 +138,19 @@ export default function Header() {
             ))}
             <button onClick={() => setSearchOpen(true)} className="p-2 transition-opacity hover:opacity-70" aria-label="Search">
               <Icon.Search className="h-5 w-5" />
+            </button>
+            <button
+              onClick={() => setBagOpen(true)}
+              className="relative p-2 transition-opacity hover:opacity-70"
+              aria-label={`Open bag, ${bagCount} items`}
+              data-cart-open
+            >
+              <Icon.Bag className="h-5 w-5" />
+              {bagCount > 0 && (
+                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-gold px-1 font-sans text-[9px] font-medium text-ink">
+                  {bagCount > 99 ? "99+" : bagCount}
+                </span>
+              )}
             </button>
           </nav>
         </div>

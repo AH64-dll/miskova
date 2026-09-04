@@ -2,8 +2,9 @@
  *
  * Narrative copy (name/story/aura/notes/chapter/inspiredBy/bundle copy) is the
  * approved reference voice adopted verbatim from the premium redesign. Commerce
- * values (price, salePrice, images, canonical store URLs) are the live
+ * values (price, salePrice, images) are the live
  * EasyOrders values mirrored by the checked-in fallback catalog below.
+ * Purchase links are intentionally absent: checkout happens in the on-site bag.
  */
 
 export type Persona = "him" | "her" | "summer" | "best";
@@ -23,7 +24,6 @@ export type Product = {
   extra?: string;
   bundleOf?: { name: string; inspiredBy: string; top: string; heart: string; base: string }[];
   isBundle?: boolean;
-  url: string;
   /* Store categorization (mirrors the live EasyOrders categories). */
   isSummer?: boolean;
   isBestSeller?: boolean;
@@ -32,7 +32,6 @@ export type Product = {
 };
 
 const img = (f: string) => `/assets/products/${f}.webp`;
-const url = (slug: string) => `https://miskova.myeasyorders.com/products/${slug}`;
 
 export const brand = {
   name: "Miskova",
@@ -95,7 +94,6 @@ export const products: Product[] = [
       heart: "Creamy Tonka Bean, Cacao & Vanilla",
       base: "Dried Fruits & Sweet Wood Sap",
     },
-    url: url("Vintage-Lounge"),
     isSummer: false,
     isBestSeller: false,
     forGender: "him",
@@ -113,7 +111,6 @@ export const products: Product[] = [
       "Heir gives you a natural, established charisma. It tells people you are a person of substance who possesses a true, warm inner strength. This Chapter seals the quiet confidence and the warm legacy of true leadership.",
     aura: "Warm Authority & Charisma",
     notes: { top: "Orange Blossom", heart: "Praline & Cinnamon", base: "Warm Vanilla" },
-    url: url("Heir"),
     isSummer: false,
     isBestSeller: true,
     forGender: "him",
@@ -130,7 +127,6 @@ export const products: Product[] = [
       "The magnetic declaration of your ambition. Liquid Gold is the captivating force that asserts itself before you even walk into a room. This Chapter seals the sheer willpower that makes you achieve everything you desire and shine through any crowd.",
     aura: "Magnetism & Ambition",
     notes: { top: "Lavender & Mint", heart: "Vanilla & Benzoin", base: "Honey, Tonka Bean & Tobacco" },
-    url: url("Liquid-Gold"),
     isSummer: false,
     isBestSeller: true,
     forGender: "her",
@@ -147,7 +143,6 @@ export const products: Product[] = [
       "Eternal Knot gives you the feeling of being totally secure and supported. It tells people you are enveloped in a powerful, warm embrace that never lets go. This Chapter seals the unbreakable bond that gives you the sense that you are never alone, and your strength is doubled.",
     aura: "Depth & Unity",
     notes: { top: "Pink Pepper", heart: "Deep Toffee & Cinnamon", base: "Warm Vanilla & Amber" },
-    url: url("Eternal-Knot"),
     isSummer: false,
     isBestSeller: false,
     forGender: "unisex",
@@ -168,7 +163,6 @@ export const products: Product[] = [
       heart: "Warm Cinnamon & Oakwood Absolute",
       base: "Creamy Vanilla, Praline & Sandalwood",
     },
-    url: url("Heavens-cut"),
     isSummer: false,
     isBestSeller: false,
     forGender: "unisex",
@@ -186,7 +180,6 @@ export const products: Product[] = [
       "This scent is a pure, soft embrace. The Caramel and silky Vanilla are incredibly smooth and comforting, creating an irresistible, cloud-like texture. This Chapter seals the gentle presence of comfort at its highest peak, making you uniquely memorable.",
     aura: "Pure Comfort & Brightness",
     notes: { top: "Warm Caramel", heart: "Sweet Honey & Coumarin", base: "Silky Vanilla & White Musk" },
-    url: url("Ivory-Nectar"),
     isSummer: false,
     isBestSeller: false,
     forGender: "her",
@@ -203,7 +196,6 @@ export const products: Product[] = [
       "This scent makes you feel like royalty wrapped in velvet. The unexpected Strawberry and rich Saffron Leather are so deep and smooth, it smells like priceless couture. This Chapter seals the Majestic Splendor that says you own the room with effortless, luxurious elegance.",
     aura: "Velvet Elegance",
     notes: { top: "Sweet Strawberry & Caramel", heart: "Spicy Saffron & Ginger", base: "Luxurious Leather & Vanilla" },
-    url: url("Sweet-Empire"),
     isSummer: false,
     isBestSeller: false,
     forGender: "her",
@@ -220,7 +212,6 @@ export const products: Product[] = [
       "This is not just a flower, it’s a feverish, velvet curtain of scent. The massive Hibiscus and Rose are deepened by a powerful, lush, almost jammy intensity that has a rich, commanding texture. This Chapter seals the Intense Drama and the Feverish Opulence of a rare, high-stakes secret.",
     aura: "Intense Drama & Depth",
     notes: { top: "Ethereal Hibiscus & Spearmint", heart: "Jammy Rose & Cassis", base: "Warm Vanilla & Ambrette Seeds" },
-    url: url("Crimson-Bloom"),
     isSummer: true,
     isBestSeller: true,
     forGender: "her",
@@ -239,7 +230,6 @@ export const products: Product[] = [
     aura: "Dramatic Magnificence",
     keyNotes: "Amber, Benzoin, Vanilla",
     extra: "Vibe: Sophisticated, Bold, and Unforgettable.",
-    url: url("Third-Act"),
     isSummer: false,
     isBestSeller: true,
     forGender: "unisex",
@@ -256,7 +246,6 @@ export const products: Product[] = [
     story:
       "Inspired by the legendary Oud Maracuja, Exotic Dusk is the grandest, most intoxicating finale of our collection. This scent opens with dazzling, exotic Passion Fruit that slices through the dense, primal warmth of Oud and Rich Leather. Designed for ultimate confidence and supremacy, Exotic Dusk makes you the most powerful entity in the room, moving with silent, commanding grace.",
     notes: { top: "Dazzling Passion Fruit", heart: "Primal Oud", base: "Rich Leather" },
-    url: url("Exotic-Dusk"),
     isSummer: false,
     isBestSeller: false,
     forGender: "unisex",
@@ -274,7 +263,6 @@ export const products: Product[] = [
       "A brilliant citrus surge that cuts through cooling herbs, softened by cold apricot, giving the wearer an aura of refreshment and energy. Designed for the individual who radiates confidence and effortless energy. A perfect signature for hot days and summery nights.",
     aura: "Refreshment & Energy",
     notes: { top: "Orange, Lemon, Bergamot & Mint", heart: "Apricot & Basil", base: "Dates & Fig" },
-    url: url("Pacific-Sol"),
     isSummer: true,
     isBestSeller: true,
     forGender: "unisex",
@@ -292,7 +280,6 @@ export const products: Product[] = [
       "An exotic fruit explosion that transitions into a sophisticated musky, ambery warmth. It starts loud and joyful, then settles into a magnetic, “clean luxury” scent. A versatile masterpiece for the optimist — bright enough to fend off the hottest days but still with the magnetic presence needed for a night out.",
     aura: "Bliss & Happiness",
     notes: { top: "Orange, Sicilian Lemon & Bergamot", heart: "Exotic Fruits", base: "White Musk, Warm Amber & Vanilla" },
-    url: url("Fruit-Fusion"),
     isSummer: true,
     isBestSeller: true,
     forGender: "unisex",
@@ -308,7 +295,6 @@ export const products: Product[] = [
     story:
       "A powerful aromatic-fougère that balances clean, metallic freshness with a warm, dark woody depth. It leaves a dense, magnetic trail that projects hard and commands the room. Tailored for the modern visionary — sharp enough for the boardroom, yet sensual enough for the night.",
     notes: { top: "Green Apple, Frozen Ginger & Italian Bergamot", heart: "Sage, Juniper Berries & Geranium", base: "Amberwood, Cedar & Tonka Bean" },
-    url: url("Y-code"),
     isSummer: true,
     isBestSeller: false,
     forGender: "him",
@@ -325,7 +311,6 @@ export const products: Product[] = [
     story:
       "A complex, dark-aquatic and woody fragrance. It starts with an intense, realistic blast of salted ocean air and transitions into a warm, deeply masculine skin-scent of rich woods and ambergris. Tailored for the enigmatic individual — sophisticated enough for formal evenings and rugged enough to make a powerful, distinct statement during the day.",
     notes: { top: "Aquatic Accord & Bergamot", heart: "Rosemary, Sage & Geranium", base: "Incense & Dark Patchouli" },
-    url: url("The-Pequod"),
     isSummer: true,
     isBestSeller: false,
     forGender: "him",
@@ -356,7 +341,6 @@ export const products: Product[] = [
         base: "Warm Vanilla",
       },
     ],
-    url: url("Spider-bundle"),
     isSummer: true,
     isBestSeller: true,
     forGender: "him",
@@ -381,7 +365,6 @@ export const products: Product[] = [
         base: "Warm Amber & Vanilla",
       },
     ],
-    url: url("Day-and-Night"),
     isSummer: false,
     isBestSeller: true,
     forGender: "unisex",
@@ -475,7 +458,6 @@ export type CatalogProduct = {
   isAvailable: boolean;
   categorySlugs: string[];
   requiresVariant: boolean;
-  canonicalUrl: string;
 };
 
 export type CatalogCategory = {
@@ -490,7 +472,6 @@ export type CatalogSnapshot = {
   categories: CatalogCategory[];
 };
 
-
 type FallbackSeed = {
   id: string;
   name: string;
@@ -504,7 +485,6 @@ type FallbackSeed = {
   categorySlugs: string[];
   requiresVariant: boolean;
 };
-
 /* Snapshot of the live store (verified against the EasyOrders API by
  * scripts/test-catalog-parity.mjs). Treated as read-only truth. */
 const SEEDS: FallbackSeed[] = [
@@ -729,13 +709,11 @@ const SEEDS: FallbackSeed[] = [
     requiresVariant: true,
   },
 ];
-
 function seedToProduct(seed: FallbackSeed): CatalogProduct {
   return {
     ...seed,
     image: `/assets/products/${seed.slug}.webp`,
     isAvailable: !seed.trackStock || seed.quantity > 0,
-    canonicalUrl: `https://miskova.myeasyorders.com/products/${seed.slug}`,
   };
 }
 

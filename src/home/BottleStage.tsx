@@ -1,7 +1,8 @@
 "use client";
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+ import type { RefObject } from "react";
 import * as THREE from "three";
 import { buildMiskovaBottle, FLOOR_Y, type MiskovaBottle } from "./bottle/bottleModel";
 import { bySlug } from "@/data/products";
@@ -23,15 +24,25 @@ import {
   setPointer,
   smoothstep,
 } from "./journeyStore";
-
-const CAMERA = {
-  fov: 31,
-  near: 0.05,
-  far: 40,
-  desktop: [0.18, 0.0, 4.15] as [number, number, number],
-  compact: [0.08, 0.0, 5.30] as [number, number, number],
-  target: [0.06, 0.0, 0] as [number, number, number],
-};
+ const CAMERA = {
+   fov: 31,
+   near: 0.05,
+   far: 40,
+  // Full-bleed hero: the bottle group is offset +x in world units so its
+  // projection lands at ~65% viewport width on a 1440 canvas, with the glass
+  // body scaled to 0.8 (height ≈ 47% of the hero) so its right edge clears
+  // the price/CTA column by ~150px. Camera stays put so spray/wake framing
+  // is unchanged.
+  desktop: [0.5, -0.02, 3.75] as [number, number, number],
+  compact: [0.55, 0.75, 6.45] as [number, number, number],
+  target: [0.42, -0.02, 0] as [number, number, number],
+  targetCompact: [0.42, 0.65, 0] as [number, number, number],
+  groupOffset: [0.9, -0.1, 0] as [number, number, number],
+  // Compact: the anchor sits high-right so the bottle fills the empty zone
+  // between the header and the copy stack (headline/CTAs/caption stay clear).
+  groupOffsetCompact: [0.85, 1.27, 0] as [number, number, number],
+  bottleScale: 0.8,
+ };
 
 const POINTER_PARALLAX = { rotationX: 0.012, rotationY: 0.022, positionX: 0.022, positionY: 0.012 };
 
@@ -48,16 +59,17 @@ function isDescendant(object: THREE.Object3D, ancestor: THREE.Object3D): boolean
   return false;
 }
 
-type StageContentsProps = {
-  host: HTMLElement | null;
-  mobile: boolean;
-  compact: boolean;
-  reduceMotion: boolean;
-  onReady: () => void;
-  onFail: (error: unknown) => void;
-};
+ type StageContentsProps = {
+   host: HTMLElement | null;
+   eventSource: HTMLElement | null;
+   mobile: boolean;
+   compact: boolean;
+   reduceMotion: boolean;
+   onReady: () => void;
+   onFail: (error: unknown) => void;
+ };
 
-function StageContents({ host, mobile, compact, reduceMotion, onReady, onFail }: StageContentsProps) {
+ function StageContents({ host, eventSource, mobile, compact, reduceMotion, onReady, onFail }: StageContentsProps) {
   const gl = useThree((state) => state.gl);
   const scene = useThree((state) => state.scene);
   const camera = useThree((state) => state.camera);
@@ -69,66 +81,104 @@ function StageContents({ host, mobile, compact, reduceMotion, onReady, onFail }:
   const glintLight = useRef<THREE.DirectionalLight>(null);
   const sweepLight = useRef<THREE.PointLight>(null);
   const burstLight = useRef<THREE.PointLight>(null);
+   const floorPool = useMemo(() => createFloorPool(FLOOR_Y), []);
+   const anchorRef = useRef<THREE.Group | null>(null);
+   const rig = useMemo(() => {
+     // The hero stage presents the featured chapter — label matches the caption.
+     const featured = bySlug("Liquid-Gold");
+     const bottle = buildMiskovaBottle({ brand: "MISKOVA", name: featured.name, sub: "EXTRAIT DE PARFUM" });
+     const spray = createSpraySystem(mobile, gl.getPixelRatio());
+     const wake = createWakeField(mobile);
+     const surface = createInteractiveSurface(FLOOR_Y);
+     // Same gate scale factor as the bottle root below (desktop only) so the
+     // lifted cap apex stays below the header nav row.
+     const capUnit = bottle.unit * (compact ? 0.75 : CAMERA.bottleScale);
+     const capSpring = createCapSpring(bottle.cap, capUnit);
+     const atomizer = createAtomizerSpring(bottle.push, bottle.unit);
+     const fluid = createFluidPhysics();
+     return { bottle, spray, wake, surface, capSpring, atomizer, fluid };
+   }, [mobile, gl, compact]);
 
-  const floorPool = useMemo(() => createFloorPool(FLOOR_Y), []);
-  const rig = useMemo(() => {
-    // The hero stage presents the featured chapter — label matches the caption.
-    const featured = bySlug("Liquid-Gold");
-    const bottle = buildMiskovaBottle({ brand: "MISKOVA", name: featured.name, sub: "EXTRAIT DE PARFUM" });
-    const spray = createSpraySystem(mobile, gl.getPixelRatio());
-    const wake = createWakeField(mobile);
-    const surface = createInteractiveSurface(FLOOR_Y);
-    const capSpring = createCapSpring(bottle.cap, bottle.unit);
-    const atomizer = createAtomizerSpring(bottle.push, bottle.unit);
-    const fluid = createFluidPhysics();
-    return { bottle, spray, wake, surface, capSpring, atomizer, fluid };
-  }, [mobile, gl]);
-
-  // --- scene assembly, environment probe, disposal -------------------------
-  useEffect(() => {
-    const { bottle, spray, wake, surface } = rig;
+   // --- scene assembly, environment probe, disposal -------------------------
+   // The whole rig (bottle + pool + surface + wake + spray) lives in an
+   // anchored group so the full-bleed camera can place it off-center while
+   useEffect(() => {
+     const { bottle, spray, wake, surface } = rig;
+     const anchor = new THREE.Group();
+     anchor.name = "MiskovaAnchor";
+     anchorRef.current = anchor;
+    const offset = compact ? CAMERA.groupOffsetCompact : CAMERA.groupOffset;
+    anchor.position.set(offset[0], offset[1], offset[2]);
+    // Gate fix: shrink the model so the glass body clears the price/CTA
+    // column on desktop. The pool reads as the bottle's contact shadow and
+    // the surface as its reactive pedestal, sized so the full ellipse (soft
+    // rim included) stays inside the 1440 canvas. On compact the anchor sits
+    // high-right at near camera height, which would render the floor discs
+    // edge-on as a hairline — the compact hero presents the bottle floating
+    // in mist with no pedestal instead. Spray + wake stay unscaled so the
+    // plume still crosses the full banner.
+    const s = compact ? 0.75 : CAMERA.bottleScale;
+    bottle.root.scale.setScalar(s);
+    if (compact) {
+      anchor.add(bottle.root, spray.points, wake.group);
+    } else {
+      floorPool.mesh.scale.setScalar(s * 0.52);
+      surface.mesh.scale.setScalar(s * 0.82);
+      anchor.add(bottle.root, spray.points, wake.group, surface.mesh, floorPool.mesh);
+    }
     let environment: { texture: THREE.Texture; dispose: () => void } | null = null;
     try {
-      scene.add(bottle.root, spray.points, wake.group, surface.mesh, floorPool.mesh);
-      environment = createStudioEnvironment(gl);
-      scene.environment = environment.texture;
-      journey.ready = true;
-      journey.failed = false;
-      onReady();
-      if (process.env.NODE_ENV !== "production" && typeof window !== "undefined") {
-        Reflect.set(window, "__miskova", { ...rig, scene, gl, camera, THREE });
-      }
-    } catch (error) {
-      journey.failed = true;
-      onFail(error);
-    }
-
-    return () => {
-      scene.remove(bottle.root, spray.points, wake.group, surface.mesh, floorPool.mesh);
-      scene.environment = null;
-      environment?.dispose();
-      bottle.dispose();
-      spray.dispose();
-      wake.dispose();
-      surface.dispose();
-      floorPool.dispose();
-      journey.ready = false;
-      if (process.env.NODE_ENV !== "production" && typeof window !== "undefined") Reflect.deleteProperty(window, "__miskova");
-    };
-  }, [rig, scene, gl, camera, floorPool, onReady, onFail]);
+      scene.add(anchor);
+       environment = createStudioEnvironment(gl);
+       scene.environment = environment.texture;
+       journey.ready = true;
+       journey.failed = false;
+       onReady();
+       if (process.env.NODE_ENV !== "production" && typeof window !== "undefined") {
+         Reflect.set(window, "__miskova", { ...rig, anchor, scene, gl, camera, THREE });
+       }
+     } catch (error) {
+       journey.failed = true;
+       onFail(error);
+     }
+     return () => {
+       scene.remove(anchor);
+       anchor.remove(bottle.root, spray.points, wake.group, surface.mesh, floorPool.mesh);
+       anchorRef.current = null;
+       scene.environment = null;
+       environment?.dispose();
+       bottle.dispose();
+       spray.dispose();
+       wake.dispose();
+       surface.dispose();
+       floorPool.dispose();
+       journey.ready = false;
+       if (process.env.NODE_ENV !== "production" && typeof window !== "undefined") Reflect.deleteProperty(window, "__miskova");
+     };
+   }, [rig, scene, gl, camera, floorPool, compact, onReady, onFail]);
 
   useEffect(() => {
     const position = compact ? CAMERA.compact : CAMERA.desktop;
+    const target = compact ? CAMERA.targetCompact : CAMERA.target;
     camera.position.set(position[0], position[1], position[2]);
-    camera.lookAt(CAMERA.target[0], CAMERA.target[1], CAMERA.target[2]);
+    camera.lookAt(target[0], target[1], target[2]);
+    // Compact dolly-in (6.9 → 6.2) grows the projection ~11% so the product
+    // reads at a glance on phones, paired with a brighter compact-only
+    // exposure + frontal fill light: the dark studio key rig was authored
+    // around the desktop anchor and underexposes the tighter phone frame.
+    // Desktop keeps the approved 0.82 exposure untouched.
+    gl.toneMappingExposure = compact ? 1.02 : 0.82;
     invalidate();
-  }, [camera, compact, invalidate]);
+  }, [camera, compact, gl, invalidate]);
 
-  // --- pointer parallax + mesh picking -------------------------------------
-  useEffect(() => {
-    if (!host) return;
-    const canvas = gl.domElement;
-
+   // --- pointer parallax + mesh picking -------------------------------------
+   // Pointer moves are read from the HERO SECTION (the R3F eventSource owns the
+   // canvas listeners; `host` is the full-bleed wrapper). Mesh picking listens
+   // on the event source too, since the canvas itself is pointer-transparent.
+   useEffect(() => {
+     const source = eventSource ?? host;
+     if (!source) return;
+     const canvas = gl.domElement;
     let interactionRaf: number | null = null;
     const triggerInteractionLoop = (durationMs = 1200) => {
       if (interactionRaf !== null) {
@@ -146,9 +196,9 @@ function StageContents({ host, mobile, compact, reduceMotion, onReady, onFail }:
       step();
     };
 
-    const handleMove = (event: PointerEvent) => {
-      if (reduceMotion || event.pointerType === "touch") return;
-      const rect = host.getBoundingClientRect();
+     const handleMove = (event: PointerEvent) => {
+       if (reduceMotion || event.pointerType === "touch") return;
+       const rect = source.getBoundingClientRect();
       setPointer(
         ((event.clientX - rect.left) / rect.width - 0.5) * 2,
         ((event.clientY - rect.top) / rect.height - 0.5) * 2,
@@ -160,15 +210,15 @@ function StageContents({ host, mobile, compact, reduceMotion, onReady, onFail }:
       invalidate();
     };
 
-    const raycaster = new THREE.Raycaster();
-    const ndc = new THREE.Vector2();
-    const handleDown = (event: PointerEvent) => {
-      const { bottle, capSpring, atomizer } = rig;
-      const rect = canvas.getBoundingClientRect();
-      ndc.set(
-        ((event.clientX - rect.left) / rect.width) * 2 - 1,
-        -(((event.clientY - rect.top) / rect.height) * 2 - 1),
-      );
+     const raycaster = new THREE.Raycaster();
+     const ndc = new THREE.Vector2();
+     const handleDown = (event: PointerEvent) => {
+       const { bottle, capSpring, atomizer } = rig;
+       const rect = canvas.getBoundingClientRect();
+       ndc.set(
+         ((event.clientX - rect.left) / rect.width) * 2 - 1,
+         -(((event.clientY - rect.top) / rect.height) * 2 - 1),
+       );
       raycaster.setFromCamera(ndc, camera);
       const hit = raycaster.intersectObjects([bottle.push, bottle.cap, bottle.glass], true)[0]?.object;
       if (!hit) return;
@@ -184,18 +234,18 @@ function StageContents({ host, mobile, compact, reduceMotion, onReady, onFail }:
       }
     };
 
-    host.addEventListener("pointermove", handleMove, { passive: true });
-    host.addEventListener("pointerleave", handleLeave);
-    canvas.addEventListener("pointerdown", handleDown);
-    return () => {
-      if (interactionRaf !== null) {
-        cancelAnimationFrame(interactionRaf);
-      }
-      host.removeEventListener("pointermove", handleMove);
-      host.removeEventListener("pointerleave", handleLeave);
-      canvas.removeEventListener("pointerdown", handleDown);
-    };
-  }, [host, gl, camera, rig, reduceMotion, invalidate]);
+     source.addEventListener("pointermove", handleMove, { passive: true });
+     source.addEventListener("pointerleave", handleLeave);
+     source.addEventListener("pointerdown", handleDown);
+     return () => {
+       if (interactionRaf !== null) {
+         cancelAnimationFrame(interactionRaf);
+       }
+       source.removeEventListener("pointermove", handleMove);
+       source.removeEventListener("pointerleave", handleLeave);
+       source.removeEventListener("pointerdown", handleDown);
+     };
+   }, [host, eventSource, gl, camera, rig, reduceMotion, invalidate]);
 
   // --- frame loop ----------------------------------------------------------
   const scratchOrigin = useMemo(() => new THREE.Vector3(), []);
@@ -293,10 +343,15 @@ function StageContents({ host, mobile, compact, reduceMotion, onReady, onFail }:
       scentLevel.current = 0.88;
       surface.triggerSprayImpulse();
       fluid.triggerSprayImpulse();
-      scene.updateMatrixWorld(true);
-      bottle.aim.getWorldPosition(scratchOrigin);
-      scratchDirection.set(1.0, -0.12, 0.08).transformDirection(bottle.aim.matrixWorld).normalize();
-      spray.emit(scratchOrigin, scratchDirection);
+       scene.updateMatrixWorld(true);
+       bottle.aim.getWorldPosition(scratchOrigin);
+       // Full-bleed hero: the atomizer fires screen-left across the whole
+       // banner. The spray Points live inside the bottle anchor group, so the
+       // jet is authored in ANCHOR-LOCAL space: local -x reads as screen-left
+       // (the camera looks straight down -z at the anchor).
+       anchorRef.current?.worldToLocal(scratchOrigin);
+       scratchDirection.set(-1.0, 0.06, 0.05).normalize();
+       spray.emit(scratchOrigin, scratchDirection);
     }
     burstFlash.current *= Math.pow(0.045, dt);
     scentLevel.current = Math.max(chapters.fieldEnergy * 0.58, scentLevel.current * Math.exp(-0.19 * dt));
@@ -390,32 +445,48 @@ function StageContents({ host, mobile, compact, reduceMotion, onReady, onFail }:
     }
   });
 
-  return (
-    <>
-      <fogExp2 attach="fog" args={[BG_BASE.getHex(), 0.03]} />
-      {/* Luxury studio lighting + crystal facet glint light */}
-      <directionalLight ref={keyLight} position={[-2.6, 3.2, 2.6]} color="#fff8ee" intensity={2.4} />
-      <directionalLight ref={fillLight} position={[2.6, 1.8, 2.0]} color="#f4eee4" intensity={1.6} />
-      <directionalLight ref={rimLight} position={[-2.0, 1.2, -2.4]} color="#e3c98a" intensity={2.8} />
-      <directionalLight ref={glintLight} position={[0.0, 2.6, 2.2]} color="#ffffff" intensity={2.0} />
-      <pointLight ref={sweepLight} color="#fff4dc" distance={3.5} decay={2} intensity={0} />
-      <pointLight ref={burstLight} color="#ffdfb0" distance={2.8} decay={2} intensity={0} />
+   return (
+     <>
+       <fogExp2 attach="fog" args={[BG_BASE.getHex(), 0.03]} />
+       {/* Luxury studio lighting + crystal facet glint light */}
+       <directionalLight ref={keyLight} position={[-2.6, 3.2, 2.6]} color="#fff8ee" intensity={2.4} />
+       <directionalLight ref={fillLight} position={[2.6, 1.8, 2.0]} color="#f4eee4" intensity={1.6} />
+       <directionalLight ref={rimLight} position={[-2.0, 1.2, -2.4]} color="#e3c98a" intensity={2.8} />
+       <directionalLight ref={glintLight} position={[0.0, 2.6, 2.2]} color="#ffffff" intensity={2.0} />
+       <pointLight ref={sweepLight} color="#fff4dc" distance={3.5} decay={2} intensity={0} />
+       <pointLight ref={burstLight} color="#ffdfb0" distance={2.8} decay={2} intensity={0} />
 
-      {/* Grounding contact shadow under heavy chamfered crystal glass base */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, FLOOR_Y + 0.002, 0]}>
-        <circleGeometry args={[1.9, 48]} />
-        <meshBasicMaterial color="#221810" transparent opacity={0.26} depthWrite={false} />
-      </mesh>
-    </>
-  );
-}
+       {/* Grounding contact shadow under heavy chamfered crystal glass base */}
+      {/* Compact-only frontal fill: the phone frame sits farther out while the
+          world-space key rig was authored around the desktop anchor, so the
+          label and juice underexpose. A soft camera-axis fill lifts the plaque
+          and the amber glow without blowing out the gold. No extra light on
+          desktop. */}
+      {compact && <directionalLight position={[1.1, 2.3, 5.4]} color="#fff1da" intensity={1.3} />}
+       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, FLOOR_Y + 0.002, 0]}>
+         <circleGeometry args={[1.9, 48]} />
+         <meshBasicMaterial color="#221810" transparent opacity={0.26} depthWrite={false} />
+       </mesh>
+     </>
+   );
+ }
 
-/**
- * The luxury interactive 3D hero stage.
- */
-export default function BottleStage({ className = "" }: { className?: string }) {
-  const hostRef = useRef<HTMLDivElement>(null);
-  const [host, setHost] = useState<HTMLDivElement | null>(null);
+ /**
+  * The luxury interactive 3D hero stage — full-bleed.
+  *
+  * Layout contract (see Hero.tsx): the wrapper covers the ENTIRE hero section
+  * (absolute inset-0, z-[3]) with a transparent R3F canvas whose pointer events
+  * are disabled; R3F listens on the hero section element via `eventSource`, so
+  * pointer ripples + parallax work from moves anywhere over the hero while
+  * buttons above the canvas stay clickable and the page scrolls normally.
+  */
+ type BottleStageProps = {
+   className?: string;
+   eventSourceRef?: RefObject<HTMLElement | null>;
+ };
+ export default function BottleStage({ className = "", eventSourceRef }: BottleStageProps) {
+   const hostRef = useRef<HTMLDivElement>(null);
+   const [host, setHost] = useState<HTMLDivElement | null>(null);
   const [mobile, setMobile] = useState(false);
   const [compact, setCompact] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(false);
@@ -426,8 +497,7 @@ export default function BottleStage({ className = "" }: { className?: string }) 
   const [failed, setFailed] = useState(false);
   const invalidateRef = useRef<() => void>(() => {});
 
-  useEffect(() => setHost(hostRef.current), []);
-
+   useEffect(() => setHost(hostRef.current), []);
   useEffect(() => {
     const mobileQuery = window.matchMedia("(max-width: 720px)");
     const compactQuery = window.matchMedia("(max-width: 1024px)");
@@ -519,59 +589,62 @@ export default function BottleStage({ className = "" }: { className?: string }) 
     };
     step();
   }, []);
+   const handleControl = () => {
+     if (control.state === "cap") {
+       liftCap();
+       triggerControlLoop();
+     } else if (control.state === "atomizer") {
+       pressAtomizer();
+       triggerControlLoop();
+     } else {
+       invalidateRef.current();
+     }
+   };
 
-  useEffect(() => {
-    return () => {
-      if (controlRafRef.current !== null) {
-        cancelAnimationFrame(controlRafRef.current);
-      }
-    };
-  }, []);
-
-  const handleControl = () => {
-    if (control.state === "cap") {
-      liftCap();
-      triggerControlLoop();
-    } else if (control.state === "atomizer") {
-      pressAtomizer();
-      triggerControlLoop();
-    } else {
-      invalidateRef.current();
-    }
-  };
-
-  // Offscreen/hidden-tab pause only. Mobile renders on demand; desktop renders
-  // continuously. The canvas mounts eagerly on first paint (LCP hit accepted).
-  const frameloop = !visible ? "never" : reduceMotion || mobile ? "demand" : "always";
-  const shouldMount = host !== null && webglAllowed && !failed;
-  return (
-    <div
-      ref={hostRef}
-      className={`bottleStage ${className}`}
-      data-ready={ready ? "true" : "false"}
-      data-error={failed ? "true" : "false"}
-    >
-      {shouldMount ? (
-        <Canvas
-          className="bottleStage__surface"
-          frameloop={frameloop}
-          dpr={mobile ? [1, 1] : [1, 1.5]}
-          gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
-          camera={{
-            fov: CAMERA.fov,
-            near: CAMERA.near,
-            far: CAMERA.far,
-            position: CAMERA.desktop,
-          }}
-          onCreated={({ gl, invalidate }) => {
-            gl.toneMapping = THREE.ACESFilmicToneMapping;
-            gl.toneMappingExposure = 0.82;
-            invalidateRef.current = invalidate;
-          }}
-        >
-          <StageContents
-            host={host}
-            mobile={mobile}
+   useEffect(() => {
+     return () => {
+       if (controlRafRef.current !== null) {
+         cancelAnimationFrame(controlRafRef.current);
+       }
+     };
+   }, []);
+   // Offscreen/hidden-tab pause only. Mobile renders on demand; desktop renders
+   // continuously. The canvas mounts eagerly on first paint (LCP hit accepted).
+   const frameloop = !visible ? "never" : reduceMotion || mobile ? "demand" : "always";
+   const shouldMount = host !== null && webglAllowed && !failed;
+   // R3F attaches its pointer listeners to the hero section when provided;
+   // falls back to its own wrapper div (pre-merge behavior) otherwise.
+   const eventSource = eventSourceRef?.current ?? host;
+   return (
+     <div
+       ref={hostRef}
+       className={`bottleStage ${className}`}
+       data-ready={ready ? "true" : "false"}
+       data-error={failed ? "true" : "false"}
+     >
+       {shouldMount ? (
+         <Canvas
+           className="bottleStage__surface"
+           frameloop={frameloop}
+           dpr={mobile ? [1, 1] : [1, 1.5]}
+           gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
+           eventSource={eventSource ?? undefined}
+           camera={{
+             fov: CAMERA.fov,
+             near: CAMERA.near,
+             far: CAMERA.far,
+             position: CAMERA.desktop,
+           }}
+           onCreated={({ gl, invalidate }) => {
+             gl.toneMapping = THREE.ACESFilmicToneMapping;
+             gl.toneMappingExposure = 0.82;
+             invalidateRef.current = invalidate;
+           }}
+         >
+           <StageContents
+             host={host}
+             eventSource={eventSource}
+             mobile={mobile}
             compact={compact}
             reduceMotion={reduceMotion}
             onReady={handleReady}

@@ -51,7 +51,7 @@ const CAP_RADIUS = 0.158;      // Black lacquer cap radius
 const CAP_HEIGHT = 0.360;      // Black lacquer cap height
 const CAP_BOTTOM_Y = 0.846;    // Cap seating height on the collar shelf
 
-const LABEL_WIDTH = 0.46;      // Plaque width (rectangular, matches authentic wrap)
+const LABEL_WIDTH = 0.44;      // Plaque width (rectangular, matches authentic wrap)
 const LABEL_HEIGHT = 0.41;     // Plaque height
 const LABEL_CENTER_Y = 0.42;   // Centered on the glowing liquid body between Y=0.14 and Y=0.70
 
@@ -263,8 +263,8 @@ export type MiskovaBottle = {
     glass: SweepMaterial;
     juice: JuiceMaterial;
     cap: THREE.MeshPhysicalMaterial;
-    collar: THREE.MeshStandardMaterial;
-    push: THREE.MeshStandardMaterial;
+    collar: THREE.MeshPhysicalMaterial;
+    push: THREE.MeshPhysicalMaterial;
     label: THREE.MeshPhysicalMaterial;
   };
   dispose: () => void;
@@ -345,9 +345,12 @@ export function buildMiskovaBottle(
   body.add(edges);
 
   // --- 4. Front Black & Gold Label Plaque with 3D Relief -------------------
+  // NOTE: the front glass face is the plane z = HALF_DEPTH (0.22). The plaque
+  // rides ~19mm (design units) proud of it so the transmissive glass pass can
+  // never swallow the label; the bezel/rim gives the float a physical read.
   const plaqueGroup = new THREE.Group();
   plaqueGroup.name = "LabelPlaque";
-  plaqueGroup.position.set(0, LABEL_CENTER_Y, HALF_DEPTH + 0.003);
+  plaqueGroup.position.set(0, LABEL_CENTER_Y, 0.239);
 
   // Gold border rim / bezel around plaque
   const plaqueRimGeo = new THREE.BoxGeometry(LABEL_WIDTH + 0.008, LABEL_HEIGHT + 0.008, 0.004);

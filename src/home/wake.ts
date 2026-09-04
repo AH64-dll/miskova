@@ -158,13 +158,15 @@ type RibbonSpec = {
   front: number;
 };
 
-/** Crimson Bloom: Velvet Damask rose → glowing golden amber liquid → royal gold & dark leather depth. */
-const RIBBONS: RibbonSpec[] = [
-  { position: [-0.45, 0.08, -1.25], rotation: [-0.12, 0.14, -0.10], scale: [1.15, 1.10], front: 0 },
-  { position: [0.42, -0.32, -1.55], rotation: [0.10, -0.16, 0.08], scale: [1.02, 0.95], front: 0 },
-  { position: [-0.32, -0.05, -1.75], rotation: [-0.08, 0.10, 0.06], scale: [1.08, 0.90], front: 0 },
-  { position: [0.48, -0.38, -1.95], rotation: [0.14, -0.12, -0.08], scale: [0.95, 0.82], front: 0 },
-];
+ /** Crimson Bloom: Velvet Damask rose → glowing golden amber liquid → royal gold & dark leather depth.
+     Full-bleed hero: ribbons are centered on the anchor (the bottle sits at
+     the anchor origin) and fan out ±x so the field spans the whole banner. */
+ const RIBBONS: RibbonSpec[] = [
+   { position: [-2.6, 0.08, -1.25], rotation: [-0.12, 0.14, -0.10], scale: [1.15, 1.10], front: 0 },
+   { position: [0.4, -0.32, -1.55], rotation: [0.10, -0.16, 0.08], scale: [1.02, 0.95], front: 0 },
+   { position: [2.8, -0.05, -1.75], rotation: [-0.08, 0.10, 0.06], scale: [1.08, 0.90], front: 0 },
+   { position: [-0.4, -0.38, -1.95], rotation: [0.14, -0.12, -0.08], scale: [0.95, 0.82], front: 0 },
+ ];
 
 const PALETTES: Array<[string, string, string]> = [
   ["#8a1525", "#d87824", "#e8a06a"],
@@ -191,13 +193,15 @@ export type WakeField = {
   dispose: () => void;
 };
 
-export function createWakeField(mobile: boolean): WakeField {
-  const group = new THREE.Group();
-  group.name = "MiskovaWake";
+ export function createWakeField(mobile: boolean): WakeField {
+   const group = new THREE.Group();
+   group.name = "MiskovaWake";
 
-  const geometry = new THREE.PlaneGeometry(5.4, 1.28, mobile ? 72 : 144, mobile ? 10 : 20);
-  const materials: THREE.ShaderMaterial[] = [];
-  const count = mobile ? 3 : RIBBONS.length;
+   // Full-bleed hero: ribbons span the whole banner (~11-12 world units)
+   // behind the bottle instead of the old boxed stage.
+   const geometry = new THREE.PlaneGeometry(11.5, 2.1, mobile ? 72 : 144, mobile ? 10 : 20);
+   const materials: THREE.ShaderMaterial[] = [];
+   const count = mobile ? 3 : RIBBONS.length;
 
   RIBBONS.slice(0, count).forEach((spec, index) => {
     const [a, b, c] = PALETTES[index];

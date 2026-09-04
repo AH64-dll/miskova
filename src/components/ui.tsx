@@ -130,6 +130,7 @@ export function Button({
   href,
   type = "button",
   disabled,
+  dataAdd,
 }: {
   children: ReactNode;
   className?: string;
@@ -138,6 +139,7 @@ export function Button({
   href?: string;
   type?: "button" | "submit";
   disabled?: boolean;
+  dataAdd?: string;
 }) {
   const base =
     "group/btn relative inline-flex items-center justify-center gap-3 overflow-hidden whitespace-nowrap px-7 py-3.5 font-sans text-[11px] uppercase tracking-[0.28em] transition-all duration-500 ease-[cubic-bezier(.16,1,.3,1)] disabled:opacity-40 disabled:pointer-events-none";
@@ -171,7 +173,7 @@ export function Button({
       </a>
     );
   return (
-    <button type={type} onClick={onClick} className={cls} disabled={disabled}>
+    <button type={type} onClick={onClick} className={cls} disabled={disabled} data-add={dataAdd}>
       {inner}
     </button>
   );

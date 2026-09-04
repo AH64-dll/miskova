@@ -139,7 +139,6 @@ export async function getCatalog(): Promise<CatalogSnapshot> {
         isAvailable: !trackStock || quantity > 0,
         categorySlugs,
         requiresVariant: (p.variations?.length ?? 0) > 0,
-        canonicalUrl: `https://miskova.myeasyorders.com/products/${p.slug}`,
       };
     });
 
