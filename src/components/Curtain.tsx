@@ -9,7 +9,11 @@ export default function Curtain() {
   const [done, setDone] = useState(true);
   useEffect(() => {
     try {
-      if (sessionStorage.getItem("miskova-curtain-shown") || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      if (
+        window.innerWidth < 768 ||
+        sessionStorage.getItem("miskova-curtain-shown") ||
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      ) {
         setDone(true);
         return;
       }

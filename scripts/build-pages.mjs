@@ -8,12 +8,15 @@ const tempApiDir = path.join(root, "src", "api_server");
 const outDir = path.join(root, "out");
 
 try {
-  console.log("1. Preparing API routes for static export...");
+  console.log("1. Cleaning .next cache...");
+  fs.rmSync(path.join(root, ".next"), { recursive: true, force: true });
+
+  console.log("2. Preparing API routes for static export...");
   if (fs.existsSync(apiDir)) {
     fs.renameSync(apiDir, tempApiDir);
   }
 
-  console.log("2. Running static build (GITHUB_PAGES=true)...");
+  console.log("3. Running static build (GITHUB_PAGES=true)...");
   execSync("npx next build", {
     stdio: "inherit",
     env: { ...process.env, GITHUB_PAGES: "true", NEXT_PUBLIC_BASE_PATH: "/miskova" },
@@ -36,7 +39,9 @@ if (fs.existsSync(notFoundHtml)) {
 
 console.log("6. Providing static mock for /api/reviews...");
 const staticApiReviewsDir = path.join(outDir, "api", "reviews");
+const miskovaApiReviewsDir = path.join(outDir, "miskova", "api", "reviews");
 fs.mkdirSync(staticApiReviewsDir, { recursive: true });
+fs.mkdirSync(miskovaApiReviewsDir, { recursive: true });
 const staticReviewPayload = JSON.stringify({
   success: true,
   data: [],
@@ -49,8 +54,10 @@ const staticReviewPayload = JSON.stringify({
 });
 fs.writeFileSync(path.join(staticApiReviewsDir, "index.html"), staticReviewPayload);
 fs.writeFileSync(path.join(staticApiReviewsDir, "index.json"), staticReviewPayload);
+fs.writeFileSync(path.join(miskovaApiReviewsDir, "index.html"), staticReviewPayload);
+fs.writeFileSync(path.join(miskovaApiReviewsDir, "index.json"), staticReviewPayload);
 fs.writeFileSync(path.join(outDir, "api", "reviews.json"), staticReviewPayload);
-
+fs.writeFileSync(path.join(outDir, "miskova", "api", "reviews.json"), staticReviewPayload);
 console.log("7. Mirroring assets and images under out/miskova/ for bulletproof resolution...");
 const miskovaSubdir = path.join(outDir, "miskova");
 fs.mkdirSync(miskovaSubdir, { recursive: true });

@@ -56,7 +56,7 @@ const COMPACT_SCALE = 0.75;
 // canvas mounts): derived from the constants above at the reference 406×804
 // hero (~1135px tall).
 const COMPACT_FIT_FALLBACK = { distance: 7.2, centerY: 0.62, anchorY: 1.47 };
-const COMPACT_PILL_GAP = -18;
+const COMPACT_PILL_GAP = 12;
 // Compact cap pose: the cap floats above-and-right of the atomizer with a
 // pronounced theatrical tilt. The band's top margin (Hero, mt-[9svh]) keeps
 // even the lifted apex below the eyebrow lockup. Desktop keeps the authored
@@ -732,7 +732,7 @@ export default function BottleStage({ className = "", eventSourceRef }: BottleSt
    }, []);
   // Offscreen/hidden-tab pause only. Mobile renders on demand; desktop renders
   // continuously. The canvas mounts eagerly on first paint (LCP hit accepted).
-  const frameloop = !visible ? "never" : reduceMotion || mobile ? "demand" : "always";
+  const frameloop = !visible ? "never" : reduceMotion ? "demand" : "always";
   const shouldMount = host !== null && webglAllowed && !failed;
   // R3F attaches its pointer listeners to the hero section when provided;
   // falls back to its own wrapper div (pre-merge behavior) otherwise.
