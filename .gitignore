@@ -47,7 +47,6 @@ out/
 node_modules/
 .data/
 *.log
-clientW=${res.clientW}
 tsconfig.tsbuildinfo
 tsconfig.scenecheck.tsbuildinfo
 
