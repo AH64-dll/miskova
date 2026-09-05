@@ -15,7 +15,7 @@ function readBag(): BagItem[] {
     if (!raw) return [];
     const parsed: unknown = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    const valid = new Set(products.map((p) => p.slug));
+    const valid = new Set(products.filter((p) => p.price != null && effectivePrice(p) > 0).map((p) => p.slug));
     const out: BagItem[] = [];
     for (const entry of parsed) {
       if (typeof entry !== "object" || entry === null) continue;
@@ -108,7 +108,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [items, bagHydrated]);
 
   const addToBag = useCallback((slug: string) => {
-    if (!products.some((p) => p.slug === slug)) return;
+    if (!products.some((p) => p.slug === slug && p.price != null && effectivePrice(p) > 0)) return;
     setItems((prev) => {
       const line = prev.find((l) => l.slug === slug);
       if (line) return prev.map((l) => (l.slug === slug ? { ...l, qty: Math.min(l.qty + 1, MAX_QTY) } : l));
@@ -135,6 +135,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [items]);
 
   const openProduct = useCallback((slug: string) => {
+    if (!products.some((product) => product.slug === slug)) return;
     window.location.hash = `/product/${slug}`;
     setActiveSlug(slug);
     setSearchOpen(false);
@@ -189,5 +190,5 @@ export function scrollToId(id: string) {
   const el = document.getElementById(id);
   if (!el) return;
   const top = el.getBoundingClientRect().top + window.scrollY - 64;
-  window.scrollTo({ top, behavior: "smooth" });
+  window.scrollTo({ top, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
 }

@@ -83,13 +83,18 @@ export default function ShaderCanvas({ frag, className, speed = 1, interactive =
       gl.compileShader(s);
       if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
         console.warn(gl.getShaderInfoLog(s));
+        gl.deleteShader(s);
         return null;
       }
       return s;
     };
     const vs = compile(gl.VERTEX_SHADER, VERT);
     const fs = compile(gl.FRAGMENT_SHADER, frag);
-    if (!vs || !fs) return;
+    if (!vs || !fs) {
+      if (vs) gl.deleteShader(vs);
+      if (fs) gl.deleteShader(fs);
+      return;
+    }
     const prog = gl.createProgram()!;
     gl.attachShader(prog, vs);
     gl.attachShader(prog, fs);
@@ -156,7 +161,12 @@ export default function ShaderCanvas({ frag, className, speed = 1, interactive =
       ro.disconnect();
       io.disconnect();
       window.removeEventListener("pointermove", onMove);
-      gl.getExtension("WEBGL_lose_context")?.loseContext();
+      // StrictMode replays this effect on the same canvas. Losing its context
+      // here leaves the next setup with a dead renderer and an opaque overlay.
+      gl.deleteBuffer(buf);
+      gl.deleteProgram(prog);
+      gl.deleteShader(vs);
+      gl.deleteShader(fs);
     };
   }, [frag, speed, interactive, quality]);
 

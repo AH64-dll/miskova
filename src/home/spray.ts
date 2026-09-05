@@ -109,8 +109,8 @@ export type SpraySystem = {
 };
 
 export function createSpraySystem(mobile: boolean, pixelRatio: number): SpraySystem {
-  const capacity = mobile ? 1200 : 2400;
-  const emitCount = mobile ? 600 : 1100;
+  const capacity = mobile ? 1700 : 2400;
+  const emitCount = mobile ? 840 : 1100;
 
   const positions = new Float32Array(capacity * 3);
   const velocities = new Float32Array(capacity * 3);
@@ -155,7 +155,7 @@ export function createSpraySystem(mobile: boolean, pixelRatio: number): SpraySys
     },
     transparent: true,
     depthWrite: false,
-    depthTest: true,
+    depthTest: false,
     blending: THREE.NormalBlending,
     toneMapped: true,
   });
@@ -163,8 +163,7 @@ export function createSpraySystem(mobile: boolean, pixelRatio: number): SpraySys
   const points = new THREE.Points(geometry, material);
   points.name = "MiskovaSprayMist";
   points.frustumCulled = false;
-  points.renderOrder = 14;
-
+  points.renderOrder = 10;
   const flush = () => {
     posAttr.needsUpdate = true;
     ageAttr.needsUpdate = true;
@@ -210,7 +209,9 @@ export function createSpraySystem(mobile: boolean, pixelRatio: number): SpraySys
         velocities[p + 2] = sprayDir.z * speed;
 
         ages[index] = 0.001 + Math.random() * 0.015;
-        lifetimes[index] = isVapor ? 3.2 + Math.random() * 2.2 : 2.2 + Math.random() * 1.6;
+        lifetimes[index] = isVapor
+          ? (mobile ? 4.5 + Math.random() * 3.0 : 3.2 + Math.random() * 2.2)
+          : (mobile ? 3.0 + Math.random() * 2.2 : 2.2 + Math.random() * 1.6);
         sizes[index] = isVapor ? 38 + Math.random() * 42 : 18 + Math.random() * 24;
         mists[index] = isVapor ? 1.0 : 0.0;
         speeds[index] = speed;
@@ -251,7 +252,7 @@ export function createSpraySystem(mobile: boolean, pixelRatio: number): SpraySys
          // Upward thermal buoyancy + gentle 3D vortex turbulence, plus a steady
          // screen-left (-x) drift so the burst sweeps across the whole banner.
          const turbulence = Math.min(1.0, age * 1.8);
-         velocities[p] += (-0.85 - mists[i] * 0.55) * step; // hero-wide drift
+         velocities[p] += (mobile ? -1.28 - mists[i] * 0.82 : -0.85 - mists[i] * 0.55) * step; // hero-wide drift (compact: 1.5x sweep)
          velocities[p + 1] += (0.09 + mists[i] * 0.055) * step; // buoyant rise
          velocities[p] += Math.sin(time * 2.5 + seed) * 0.18 * turbulence * step;
          velocities[p + 1] += Math.cos(time * 2.0 + seed * 1.4) * 0.14 * turbulence * step;

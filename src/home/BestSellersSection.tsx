@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useScroll, useSpring, useTransform } from "motion/react";
+import { motion, useReducedMotion, useScroll, useSpring, useTransform } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { collections, discountPct, type Product } from "@/data/products";
 import { useStore } from "@/components/store";
@@ -170,6 +170,7 @@ function MobileBestRow({ items }: { items: Product[] }) {
 
 export default function BestSellersSection() {
   const items = collections.best;
+  const reducedMotion = useReducedMotion();
   // SSR-safe initial: server and first client render agree (mobile branch), then
   // the effect below flips to desktop. DesktopPinnedBest mounts only after the
   // flip, so its scroll-target ref is attached on its first commit.
@@ -188,7 +189,7 @@ export default function BestSellersSection() {
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(70%_60%_at_20%_20%,rgba(201,169,97,0.12),transparent_60%),radial-gradient(50%_50%_at_90%_90%,rgba(201,169,97,0.08),transparent_60%)]" />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold/60 to-transparent" />
 
-      {desktop ? (
+      {desktop && !reducedMotion ? (
         <DesktopPinnedBest key="pinned" items={items} />
       ) : (
         <MobileBestRow key="row" items={items} />

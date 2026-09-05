@@ -74,7 +74,7 @@ export default function ProductCard({
   return (
     <article className={cn("group relative flex flex-col", className)}>
       <div className={cn("relative w-full overflow-hidden", aspect, t.plate, t.frame, "frame-lift")}>
-        <button onClick={() => openProduct(product.slug)} className="absolute inset-0 block h-full w-full text-left focus:outline-none" aria-label={`View ${product.name}`}>
+        <button onClick={() => openProduct(product.slug)} className="absolute inset-0 block h-full w-full text-left focus-visible:-outline-offset-4" aria-label={`View ${product.name}`}>
           <motion.img
             src={product.image}
             alt={product.name}
@@ -115,7 +115,7 @@ export default function ProductCard({
               setBagOpen(true);
             }}
             className={cn(
-              "absolute inset-x-3 bottom-3 flex translate-y-3 items-center justify-center gap-2 py-3 text-[11px] uppercase tracking-[0.28em] opacity-0 transition-all duration-500 ease-[cubic-bezier(.16,1,.3,1)] group-hover:translate-y-0 group-hover:opacity-100 focus:translate-y-0 focus:opacity-100",
+              "product-quick-add absolute inset-x-3 bottom-3 flex translate-y-3 items-center justify-center gap-2 py-3 text-[11px] uppercase tracking-[0.28em] opacity-0 transition-all duration-500 ease-[cubic-bezier(.16,1,.3,1)] group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100 focus:translate-y-0 focus:opacity-100",
               t.add,
               persona === "her" && "inset-x-6 rounded-full",
             )}
@@ -125,13 +125,13 @@ export default function ProductCard({
         )}
       </div>
 
-      <div className={cn("mt-4 flex items-start justify-between gap-3", persona === "her" && "flex-col items-center text-center")}>
+      <div className={cn("mt-5 flex flex-col items-start justify-between gap-3 border-t border-current/15 pt-4 xl:flex-row", persona === "her" && "items-center text-center xl:flex-col xl:items-center")}>
         <div className="min-w-0">
           {index != null && persona === "him" && <p className="eyebrow mb-1 text-gold/60">No. {String(index + 1).padStart(2, "0")}</p>}
           <button onClick={() => openProduct(product.slug)} className={cn("text-left font-display text-[1.45rem] leading-none tracking-tight", t.name, persona === "her" && "italic font-light text-[1.6rem]")}>
             {product.name}
           </button>
-          {product.inspiredBy && <p className={cn("mt-1.5 font-sans text-[11px] uppercase tracking-[0.22em]", t.meta)}>Inspired by {product.inspiredBy}</p>}
+          {product.inspiredBy && <p className={cn("mt-2 font-sans text-[10px] uppercase leading-relaxed tracking-[0.16em]", t.meta)}>Inspired by {product.inspiredBy}</p>}
           {product.isBundle && <p className={cn("mt-1.5 font-sans text-[11px] uppercase tracking-[0.22em]", t.meta)}>Two chapters</p>}
         </div>
         <Price product={product} tone={t.price} size="sm" className={cn("shrink-0 pt-1", t.name)} />

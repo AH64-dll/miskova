@@ -1,41 +1,20 @@
 import { NextResponse } from "next/server";
+import { readJsonBody, RequestBodyError } from "@/lib/requestBody";
 import { brand, effectivePrice, products } from "@/data/products";
 import { addOrder, makeOrderRef, OrderStorageError, OrderValidationError } from "@/lib/ordersStorage";
 import { isValidEgPhone, normalizeText, OrderSubmissionSchema } from "@/lib/orderSchemas";
 
 export const runtime = "nodejs";
 
-const MAX_BODY_BYTES = 16 * 1024;
-
 export async function POST(request: Request) {
-  const contentType = request.headers.get("content-type")?.split(";")[0]?.trim().toLowerCase();
-  if (contentType !== "application/json") {
-    return NextResponse.json(
-      { success: false, error: "Content-Type must be application/json." },
-      { status: 415 },
-    );
-  }
-
-  const lengthHeader = request.headers.get("content-length");
-  if (lengthHeader && Number(lengthHeader) > MAX_BODY_BYTES) {
-    return NextResponse.json({ success: false, error: "Request body too large." }, { status: 413 });
-  }
-
-  let raw: string;
-  try {
-    raw = await request.text();
-  } catch {
-    return NextResponse.json({ success: false, error: "Unable to read request." }, { status: 400 });
-  }
-  if (new TextEncoder().encode(raw).length > MAX_BODY_BYTES) {
-    return NextResponse.json({ success: false, error: "Request body too large." }, { status: 413 });
-  }
-
   let body: unknown;
   try {
-    body = raw ? JSON.parse(raw) : {};
-  } catch {
-    return NextResponse.json({ success: false, error: "Invalid JSON body." }, { status: 400 });
+    body = await readJsonBody(request);
+  } catch (error) {
+    return NextResponse.json(
+      { ok: false, error: error instanceof RequestBodyError ? error.message : "Unable to read request." },
+      { status: error instanceof RequestBodyError ? error.status : 400 },
+    );
   }
 
   const parsed = OrderSubmissionSchema.safeParse(body);
@@ -61,9 +40,10 @@ export async function POST(request: Request) {
   // Resolve prices server-side from the catalog; never trust client totals.
   const bySlug = new Map(products.map((p) => [p.slug, p]));
   for (const line of parsed.data.items) {
-    if (!bySlug.has(line.slug)) {
+    const product = bySlug.get(line.slug);
+    if (!product || product.price == null || effectivePrice(product) <= 0) {
       return NextResponse.json(
-        { success: false, error: `Unknown product: ${line.slug}.`, field: "items" },
+        { success: false, error: "This fragrance is unavailable for checkout. Please contact us.", field: "items" },
         { status: 400 },
       );
     }
@@ -98,7 +78,7 @@ export async function POST(request: Request) {
     });
     return NextResponse.json(
       { ok: true, ref: order.ref, total: order.total, freeShipping },
-      { status: 201 },
+      { status: 201, headers: { "Cache-Control": "no-store" } },
     );
   } catch (error) {
     if (error instanceof OrderValidationError) {

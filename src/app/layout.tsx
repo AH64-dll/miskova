@@ -5,6 +5,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductDetail from "@/components/ProductDetail";
 import BagDrawer from "@/components/BagDrawer";
+import SiteChrome from "@/components/SiteChrome";
 import { StoreProvider } from "@/components/store";
 import "./globals.css";
 
@@ -39,12 +40,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={`${cormorant.variable} ${jost.variable}`}>
       <body>
         <StoreProvider>
-          <Curtain />
-          <Header />
           {children}
-          <Footer />
-          <ProductDetail />
-          <BagDrawer />
+          <SiteChrome>
+            <Curtain />
+            <Header />
+            <Footer />
+            <ProductDetail />
+            <BagDrawer />
+          </SiteChrome>
         </StoreProvider>
       </body>
     </html>

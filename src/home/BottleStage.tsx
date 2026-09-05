@@ -4,7 +4,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
  import { useCallback, useEffect, useMemo, useRef, useState } from "react";
  import type { RefObject } from "react";
 import * as THREE from "three";
-import { buildMiskovaBottle, FLOOR_Y, type MiskovaBottle } from "./bottle/bottleModel";
+import { buildMiskovaBottle, CAP_TRAVEL, FLOOR_Y, type MiskovaBottle } from "./bottle/bottleModel";
 import { bySlug } from "@/data/products";
 import { createFluidPhysics, type FluidPhysics } from "./bottle/fluidPhysics";
 import { createAtomizerSpring, createCapSpring, type AtomizerSpring, type CapSpring } from "./springs";
@@ -56,7 +56,12 @@ const COMPACT_SCALE = 0.75;
 // canvas mounts): derived from the constants above at the reference 406×804
 // hero (~1135px tall).
 const COMPACT_FIT_FALLBACK = { distance: 7.2, centerY: 0.62, anchorY: 1.47 };
-const COMPACT_PILL_GAP = 6;
+const COMPACT_PILL_GAP = -18;
+// Compact cap pose: the cap floats above-and-right of the atomizer with a
+// pronounced theatrical tilt. The band's top margin (Hero, mt-[9svh]) keeps
+// even the lifted apex below the eyebrow lockup. Desktop keeps the authored
+// CAP_TRAVEL arc.
+const COMPACT_CAP_POSE = { lift: 0.42, offsetX: 0.95, offsetZ: 0.12, rotationZ: -0.42, rotationY: 0.38 };
 const COMPACT_FIT_NONE: CompactFit = { ...COMPACT_FIT_FALLBACK, pillTop: null };
 
 type CompactFit = { distance: number; centerY: number; anchorY: number; pillTop: number | null };
@@ -110,9 +115,9 @@ function isDescendant(object: THREE.Object3D, ancestor: THREE.Object3D): boolean
      const wake = createWakeField(mobile);
     // Cap-lift gate: compact lifts a shorter arc so the floating cap stays
     // inside the bottle band (clear of the eyebrow) — desktop keeps the full
-    // theatrical lift.
+    // theatrical lift. Compact also swaps in the side-offset + tilt pose.
     const capUnit = bottle.unit * (compact ? 0.45 : CAMERA.bottleScale);
-     const capSpring = createCapSpring(bottle.cap, capUnit);
+    const capSpring = createCapSpring(bottle.cap, capUnit, compact ? COMPACT_CAP_POSE : CAP_TRAVEL);
      const atomizer = createAtomizerSpring(bottle.push, bottle.unit);
      const fluid = createFluidPhysics();
      return { bottle, spray, wake, surface, capSpring, atomizer, fluid };
@@ -746,7 +751,7 @@ export default function BottleStage({ className = "", eventSourceRef }: BottleSt
          <Canvas
            className="bottleStage__surface"
            frameloop={frameloop}
-           dpr={mobile ? [1, 1] : [1, 1.5]}
+          dpr={[1, 1.5]}
            gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
            eventSource={eventSource ?? undefined}
            camera={{

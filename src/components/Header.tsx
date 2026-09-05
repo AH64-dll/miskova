@@ -40,6 +40,7 @@ export function NavLink({ n, className, onNavigate }: { n: (typeof NAV)[number];
 }
 
 export function useSectionTone() {
+  const pathname = usePathname();
   const [tone, setTone] = useState<"dark" | "light">("dark");
   useEffect(() => {
     const els = Array.from(document.querySelectorAll<HTMLElement>("[data-tone]"));
@@ -53,7 +54,7 @@ export function useSectionTone() {
     );
     els.forEach((el) => io.observe(el));
     return () => io.disconnect();
-  }, []);
+  }, [pathname]);
   return tone;
 }
 
@@ -89,15 +90,10 @@ export default function Header() {
         )}
         aria-label={brand.shippingNote}
       >
-        <div className="flex h-8 items-center whitespace-nowrap">
-          <div className="flex animate-marquee gap-16 pr-16">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <span key={i} className="eyebrow flex items-center gap-16 text-[10px] tracking-[0.4em]">
-                {brand.shippingNote.toUpperCase()}
-                <span className="h-1 w-1 rounded-full bg-gold/60" />
-              </span>
-            ))}
-          </div>
+        <div className="flex h-8 items-center justify-center gap-4 px-5 text-center text-[9px] uppercase tracking-[0.2em] sm:text-[10px]">
+          <span>Complimentary delivery on orders over {brand.freeShippingThreshold} EGP</span>
+          <span className="hidden h-1 w-1 rounded-full bg-gold/60 sm:block" aria-hidden="true" />
+          <span className="hidden sm:block">Cash on delivery</span>
         </div>
       </div>
 
@@ -112,12 +108,12 @@ export default function Header() {
       >
         <div className="mx-auto flex h-16 max-w-[1600px] items-center justify-between px-5 md:px-10">
           {/* Left nav (desktop) */}
-          <nav className="hidden items-center gap-7 lg:flex">
+          <nav aria-label="Collections" className="hidden items-center gap-6 xl:flex">
             {NAV.slice(0, 4).map((n) => (
               <NavLink key={n.id} n={n} className="link-draw eyebrow text-[10.5px] opacity-80 transition-opacity hover:opacity-100" />
             ))}
           </nav>
-          <button onClick={() => setMenuOpen(true)} className="p-2 lg:hidden" aria-label="Open menu">
+          <button onClick={() => setMenuOpen(true)} className="p-2 xl:hidden" aria-label="Open menu">
             <Icon.Menu className="h-5 w-5" />
           </button>
 
@@ -127,10 +123,11 @@ export default function Header() {
             className="absolute left-1/2 flex -translate-x-1/2 items-center gap-2 sm:gap-3"
             aria-label="Miskova home"
           >
-            <Monogram className={cn("h-7 w-7 sm:h-8 sm:w-8", dark ? "text-gold" : "text-ink")} />
+            <Monogram className={cn("hidden h-8 w-8 sm:block", dark ? "text-gold" : "text-ink")} />
             {/* Compact phones: the centered lockup must clear the search/bag
-                controls (they start ~x224 at 320) — shrink type below sm. */}
-            <span className="font-display text-[0.95rem] font-medium tracking-[0.16em] leading-none sm:text-[1.3rem] sm:tracking-[0.28em] md:text-[1.55rem] md:tracking-[0.32em]">
+                controls (they start ~x224 at 320) — the monogram drops below
+                sm and the wordmark reads dominant alone. */}
+            <span className="font-display text-[1.2rem] font-medium tracking-[0.18em] leading-none sm:text-[1.3rem] sm:tracking-[0.28em] md:text-[1.55rem] md:tracking-[0.32em]">
               MISKOVA
             </span>
           </button>
@@ -138,7 +135,7 @@ export default function Header() {
           {/* Right */}
           <nav className="flex items-center gap-1 md:gap-3" aria-label="Secondary">
             {NAV.slice(4).map((n) => (
-              <NavLink key={n.id} n={n} className="link-draw eyebrow mr-4 hidden text-[10.5px] opacity-80 transition-opacity hover:opacity-100 lg:inline-block" />
+              <NavLink key={n.id} n={n} className="link-draw eyebrow mr-4 hidden text-[10.5px] opacity-80 transition-opacity hover:opacity-100 xl:inline-block" />
             ))}
             <button onClick={() => setSearchOpen(true)} className="p-2 transition-opacity hover:opacity-70" aria-label="Search">
               <Icon.Search className="h-5 w-5" />
@@ -210,6 +207,7 @@ function SearchOverlay({ onClose }: { onClose: () => void }) {
             ref={ref}
             value={q}
             onChange={(e) => setQ(e.target.value)}
+            aria-label="Search fragrances by name or note"
             placeholder="A note, a name, a chapter…"
             className="w-full bg-transparent font-display text-4xl font-light italic placeholder:text-cream/30 focus:outline-none md:text-6xl"
           />

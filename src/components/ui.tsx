@@ -29,7 +29,7 @@ export const revealVariants: Record<"house" | "him" | "her" | "summer", Variants
 };
 
 export function useDesktop(query = "(min-width: 768px)") {
-  const [on, setOn] = useState(() => (typeof window !== "undefined" ? window.matchMedia(query).matches : false));
+  const [on, setOn] = useState(false);
   useEffect(() => {
     const mq = window.matchMedia(query);
     const upd = () => setOn(mq.matches);
@@ -105,7 +105,7 @@ export function Price({ product, className, size = "md", tone = "light" }: { pro
       </span>
     );
   return (
-    <span className={cn("flex items-baseline gap-2 font-sans tracking-wide", sz, className)}>
+    <span className={cn("flex flex-wrap items-baseline gap-x-2 gap-y-1 font-sans tracking-wide", sz, className)}>
       <span>{formatPrice(product.salePrice ?? product.price)}</span>
       {product.salePrice && (
         <span className={cn("text-[0.78em] line-through", tone === "light" ? "text-cream/40" : "text-ink/40")}>
@@ -131,6 +131,7 @@ export function Button({
   type = "button",
   disabled,
   dataAdd,
+  form,
 }: {
   children: ReactNode;
   className?: string;
@@ -140,6 +141,7 @@ export function Button({
   type?: "button" | "submit";
   disabled?: boolean;
   dataAdd?: string;
+  form?: string;
 }) {
   const base =
     "group/btn relative inline-flex items-center justify-center gap-3 overflow-hidden whitespace-nowrap px-7 py-3.5 font-sans text-[11px] uppercase tracking-[0.28em] transition-all duration-500 ease-[cubic-bezier(.16,1,.3,1)] disabled:opacity-40 disabled:pointer-events-none";
@@ -173,7 +175,7 @@ export function Button({
       </a>
     );
   return (
-    <button type={type} onClick={onClick} className={cls} disabled={disabled} data-add={dataAdd}>
+    <button type={type} form={form} onClick={onClick} className={cls} disabled={disabled} data-add={dataAdd}>
       {inner}
     </button>
   );

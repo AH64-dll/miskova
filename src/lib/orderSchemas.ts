@@ -33,6 +33,11 @@ export const GOVERNORATES = [
   "Sohag",
 ] as const;
 
+export const ORDER_STATUSES = ["pending", "confirmed", "shipped", "delivered", "cancelled"] as const;
+export const PAYMENT_STATUSES = ["pending", "collected"] as const;
+export type OrderStatus = (typeof ORDER_STATUSES)[number];
+export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
+
 export const StoredOrderSchema = z.object({
   ref: z.string().min(1).max(32),
   items: z
@@ -55,9 +60,18 @@ export const StoredOrderSchema = z.object({
     notes: z.string().max(500),
   }),
   createdAt: z.string().datetime(),
+  // Fulfilment lifecycle (EasyOrders-style COD flow): the order starts
+  // pending; payment is collected in cash by the courier at delivery.
+  status: z.enum(ORDER_STATUSES).default("pending"),
+  paymentMethod: z.literal("cod").default("cod"),
+  paymentStatus: z.enum(PAYMENT_STATUSES).default("pending"),
+  paymentCollectedAt: z.string().datetime().nullable().default(null),
+  statusUpdatedAt: z.string().datetime().nullable().default(null),
 });
 
 export type StoredOrder = z.infer<typeof StoredOrderSchema>;
+
+const cleanText = () => z.string().transform((value) => normalizeText(value).trim());
 
 export const OrderSubmissionSchema = z.object({
   items: z
@@ -70,11 +84,11 @@ export const OrderSubmissionSchema = z.object({
     .min(1)
     .max(10),
   customer: z.object({
-    name: z.string().min(2).max(60),
-    phone: z.string().min(7).max(20),
+    name: cleanText().pipe(z.string().min(2, "Please enter your name.").max(60)),
+    phone: cleanText().pipe(z.string().min(7).max(20)).refine(isValidEgPhone, "Please enter a valid phone number."),
     governorate: z.enum(GOVERNORATES),
-    address: z.string().min(5).max(300),
-    notes: z.string().max(500).optional().default(""),
+    address: cleanText().pipe(z.string().min(5, "Please enter your delivery address.").max(300)),
+    notes: cleanText().pipe(z.string().max(500)).optional().default(""),
   }),
 });
 

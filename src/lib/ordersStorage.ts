@@ -1,6 +1,7 @@
 import { promises as fs } from "fs";
 import path from "path";
-import { StoredOrderSchema, type StoredOrder } from "./orderSchemas";
+import { randomBytes } from "node:crypto";
+import { StoredOrderSchema, type OrderStatus, type PaymentStatus, type StoredOrder } from "./orderSchemas";
 
 export class OrderValidationError extends Error {
   field: string;
@@ -27,10 +28,14 @@ function resolveStorePath(): string {
 
 // Serialize all writes through one chain so concurrent requests never clobber each other.
 
-// Cross-process safety: exclusive lock file with stale-lock recovery.
+// Cross-process safety on a shared local filesystem: exclusive lock, fail closed on timeout.
 async function withFileLock<T>(filePath: string, task: () => Promise<T>): Promise<T> {
+  try {
+    await fs.mkdir(path.dirname(filePath), { recursive: true });
+  } catch {
+    throw new OrderStorageError();
+  }
   const lockPath = `${filePath}.lock`;
-  const staleMs = 10_000;
   const deadline = Date.now() + 10_000;
   for (;;) {
     try {
@@ -51,17 +56,12 @@ async function withFileLock<T>(filePath: string, task: () => Promise<T>): Promis
       }
     } catch (error) {
       const code = (error as NodeJS.ErrnoException)?.code;
-      if (code !== "EEXIST") throw error;
-      try {
-        const raw = await fs.readFile(lockPath, "utf8");
-        const stamp = Number(raw.split(":")[1]);
-        if (Number.isFinite(stamp) && Date.now() - stamp > staleMs) {
-          await fs.unlink(lockPath);
-          continue;
-        }
-      } catch {
-        /* lock vanished; retry */
+      if (code !== "EEXIST") {
+        if (error instanceof OrderValidationError || error instanceof OrderStorageError) throw error;
+        throw new OrderStorageError();
       }
+      // Never steal a lock based on age: a slow writer may still own it.
+      // After a process crash, remove the orphan lock only with writers stopped.
       if (Date.now() > deadline) {
         throw new OrderStorageError("Order store is busy. Please try again.");
       }
@@ -117,12 +117,23 @@ export async function getOrders(): Promise<StoredOrder[]> {
 }
 
 export function makeOrderRef(now = Date.now()): string {
-  return `MKV-${now.toString(36).toUpperCase()}`;
+  return `MKV-${now.toString(36).toUpperCase()}-${randomBytes(6).toString("hex").toUpperCase()}`;
 }
 
-export async function addOrder(order: Omit<StoredOrder, "createdAt"> & { createdAt?: string }): Promise<StoredOrder> {
+export type NewOrder = Omit<StoredOrder, "createdAt" | "status" | "paymentMethod" | "paymentStatus" | "paymentCollectedAt" | "statusUpdatedAt"> & {
+  createdAt?: string;
+  status?: OrderStatus;
+  paymentStatus?: PaymentStatus;
+};
+
+export async function addOrder(order: NewOrder): Promise<StoredOrder> {
   const record: StoredOrder = {
     ...order,
+    status: order.status ?? "pending",
+    paymentMethod: "cod",
+    paymentStatus: order.paymentStatus ?? "pending",
+    paymentCollectedAt: null,
+    statusUpdatedAt: null,
     createdAt: order.createdAt ?? new Date().toISOString(),
   };
   const parsed = StoredOrderSchema.safeParse(record);
@@ -133,7 +144,38 @@ export async function addOrder(order: Omit<StoredOrder, "createdAt"> & { created
   }
   return await withFileLock(resolveStorePath(), async () => {
     const orders = await readStore();
+    if (orders.some((entry) => entry.ref === parsed.data.ref)) throw new OrderStorageError();
     orders.unshift(parsed.data);
+    await writeStore(orders);
+    return parsed.data;
+  });
+}
+
+/** Admin transitions: status changes and COD payment collection. Single
+    serialized read-modify-write through the same file lock as addOrder. */
+export async function updateOrder(
+  ref: string,
+  patch: { status?: OrderStatus; paymentStatus?: PaymentStatus },
+): Promise<StoredOrder | null> {
+  return await withFileLock(resolveStorePath(), async () => {
+    const orders = await readStore();
+    const index = orders.findIndex((o) => o.ref === ref);
+    if (index === -1) return null;
+    const current = orders[index];
+    const now = new Date().toISOString();
+    const next: StoredOrder = {
+      ...current,
+      ...(patch.status ? { status: patch.status, statusUpdatedAt: now } : {}),
+      ...(patch.paymentStatus === "collected"
+        ? { paymentStatus: "collected", paymentCollectedAt: now }
+        : {}),
+      ...(patch.paymentStatus === "pending"
+        ? { paymentStatus: "pending", paymentCollectedAt: null }
+        : {}),
+    };
+    const parsed = StoredOrderSchema.safeParse(next);
+    if (!parsed.success) throw new OrderStorageError();
+    orders[index] = parsed.data;
     await writeStore(orders);
     return parsed.data;
   });

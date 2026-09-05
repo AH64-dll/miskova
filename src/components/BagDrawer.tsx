@@ -6,7 +6,8 @@ import { brand, bySlug, effectivePrice, formatPrice } from "@/data/products";
 import { useStore } from "@/components/store";
 import { cn } from "@/utils/cn";
 import { Button, Icon, LUX } from "@/components/ui";
-import { GOVERNORATES } from "@/lib/orderSchemas";
+import { GOVERNORATES, OrderSubmissionSchema } from "@/lib/orderSchemas";
+import { useDialogFocus } from "@/components/useDialogFocus";
 
 type Step = "bag" | "checkout" | "success";
 
@@ -39,6 +40,9 @@ export default function BagDrawer() {
   const [placed, setPlaced] = useState<Placed | null>(null);
   const [placedLines, setPlacedLines] = useState<{ name: string; qty: number }[]>([]);
   const wasOpen = useRef(false);
+  const submitLock = useRef(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useDialogFocus(dialogRef, bagOpen);
 
   // Reset to the bag step only on closed → open transitions (never while open,
   // so placing an order — which clears the bag — keeps the success step).
@@ -51,7 +55,9 @@ export default function BagDrawer() {
   }, [bagOpen]);
 
   useEffect(() => {
-    const k = (e: KeyboardEvent) => e.key === "Escape" && setBagOpen(false);
+    const k = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !submitLock.current) setBagOpen(false);
+    };
     window.addEventListener("keydown", k);
     return () => window.removeEventListener("keydown", k);
   }, [setBagOpen]);
@@ -67,24 +73,25 @@ export default function BagDrawer() {
   const remaining = Math.max(0, brand.freeShippingThreshold - bagTotal);
   const progress = Math.min(1, bagTotal / brand.freeShippingThreshold);
 
-  const close = () => setBagOpen(false);
+  const close = () => { if (!submitLock.current) setBagOpen(false); };
 
 
   const submit = async () => {
+    if (submitLock.current) return;
     setError(null);
-    if (!name.trim() || name.trim().length < 2) return setError("Please enter your name.");
-    if (phone.replace(/\D/g, "").length < 7) return setError("Please enter a valid phone number.");
     if (!governorate) return setError("Please choose your governorate.");
-    if (!address.trim() || address.trim().length < 5) return setError("Please enter your delivery address.");
+    const parsed = OrderSubmissionSchema.safeParse({
+      items: items.map(({ slug, qty }) => ({ slug, qty })),
+      customer: { name, phone, governorate, address, notes },
+    });
+    if (!parsed.success) return setError(parsed.error.issues[0]?.message ?? "Please check your order details.");
+    submitLock.current = true;
     setSubmitting(true);
     try {
       const res = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          items: items.map((l) => ({ slug: l.slug, qty: l.qty })),
-          customer: { name: name.trim(), phone: phone.trim(), governorate, address: address.trim(), notes: notes.trim() },
-        }),
+        body: JSON.stringify(parsed.data),
       });
       const json = (await res.json().catch(() => null)) as { ok?: boolean; ref?: string; total?: number; error?: string } | null;
       if (!res.ok || !json?.ok || !json.ref) {
@@ -99,6 +106,7 @@ export default function BagDrawer() {
     } catch {
       setError("Network error. Please try again.");
     } finally {
+      submitLock.current = false;
       setSubmitting(false);
     }
   };
@@ -113,7 +121,7 @@ export default function BagDrawer() {
   return (
     <AnimatePresence>
       {bagOpen && (
-        <div className="fixed inset-0 z-[80]" role="dialog" aria-modal aria-label="Shopping bag">
+        <div ref={dialogRef} tabIndex={-1} className="fixed inset-0 z-[80]" role="dialog" aria-modal aria-label="Shopping bag" aria-busy={submitting}>
           <motion.div
             className="absolute inset-0 bg-ink/70 backdrop-blur-sm"
             onClick={close}
@@ -133,7 +141,7 @@ export default function BagDrawer() {
               <p className="eyebrow text-[10px] text-gold">
                 {step === "bag" ? `Your bag · ${bagCount}` : step === "checkout" ? "Checkout · Cash on delivery" : "Order confirmed"}
               </p>
-              <button onClick={close} className="flex h-10 w-10 items-center justify-center rounded-full border border-cream/20 transition-colors hover:border-gold/60" aria-label="Close bag">
+              <button onClick={close} disabled={submitting} className="flex h-10 w-10 items-center justify-center rounded-full border border-cream/20 transition-colors hover:border-gold/60" aria-label="Close bag">
                 <Icon.Close className="h-4 w-4" />
               </button>
             </div>
@@ -186,7 +194,8 @@ export default function BagDrawer() {
                                 <span className="w-8 text-center font-sans text-sm">{l.qty}</span>
                                 <button
                                   onClick={() => setQty(l.slug, Math.min(l.qty + 1, 9))}
-                                  className="flex h-8 w-8 items-center justify-center transition-colors hover:text-gold"
+                                  disabled={l.qty >= 9}
+                                  className="flex h-8 w-8 disabled:opacity-30 items-center justify-center transition-colors hover:text-gold"
                                   aria-label={`Increase ${l.name}`}
                                 >
                                   <Icon.Plus className="h-3.5 w-3.5" />
@@ -231,23 +240,28 @@ export default function BagDrawer() {
                       ))}
                     </ul>
                     <p className="mt-3 flex items-center justify-between border-t border-cream/10 pt-3 font-display text-xl">
-                      <span className="eyebrow text-[10px] text-cream/50">Total</span>
+                      <span className="eyebrow text-[10px] text-cream/50">Subtotal</span>
                       <span className="text-gold-2">{formatPrice(bagTotal)}</span>
                     </p>
                   </div>
-                  <div className="mt-6 space-y-5">
+                  <p className="mt-3 text-xs leading-relaxed text-cream/65">
+                    {remaining === 0 ? "Delivery included. Pay in cash when your chapter arrives." : "Delivery fee confirmed before dispatch. Pay in cash on delivery."}
+                  </p>
+                  <form id="bag-checkout" onSubmit={(event) => { event.preventDefault(); void submit(); }} className="mt-6 space-y-5">
                     <div>
                       <label htmlFor="bag-name" className={labelCls}>Name *</label>
-                      <input id="bag-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your full name" className={inputCls} autoComplete="name" />
+                      <input id="bag-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your full name" className={inputCls} autoComplete="name" required maxLength={60} />
                     </div>
                     <div>
                       <label htmlFor="bag-phone" className={labelCls}>Phone *</label>
-                      <input id="bag-phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="01xxxxxxxxx" className={inputCls} inputMode="tel" autoComplete="tel" />
+                      <input id="bag-phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="01xxxxxxxxx" className={inputCls} type="tel" inputMode="tel" autoComplete="tel" required maxLength={20} />
                     </div>
                     <div>
                       <label htmlFor="bag-gov" className={labelCls}>Governorate *</label>
                       <select
                         id="bag-gov"
+                        required
+                        autoComplete="address-level1"
                         value={governorate}
                         onChange={(e) => setGovernorate(e.target.value)}
                         className={cn(inputCls, !governorate && "text-cream/30", "[&>option]:bg-ink [&>option]:text-cream")}
@@ -260,20 +274,20 @@ export default function BagDrawer() {
                     </div>
                     <div>
                       <label htmlFor="bag-address" className={labelCls}>Address *</label>
-                      <textarea id="bag-address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Street, building, apartment, landmark" rows={3} className={cn(inputCls, "resize-none")} autoComplete="street-address" />
+                      <textarea id="bag-address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Street, building, apartment, landmark" rows={3} className={cn(inputCls, "resize-none")} autoComplete="street-address" required maxLength={300} />
                     </div>
                     <div>
                       <label htmlFor="bag-notes" className={labelCls}>Notes</label>
-                      <textarea id="bag-notes" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Anything we should know? (optional)" rows={2} className={cn(inputCls, "resize-none")} />
+                      <textarea id="bag-notes" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Anything we should know? (optional)" rows={2} maxLength={500} className={cn(inputCls, "resize-none")} />
                     </div>
                     {error && <p role="alert" className="font-sans text-xs tracking-wide text-red-300">{error}</p>}
-                  </div>
+                  </form>
                 </div>
                 <div className="border-t border-cream/10 px-6 py-5">
-                  <Button variant="gold" className="w-full" onClick={submit} disabled={submitting || lines.length === 0}>
+                  <Button variant="gold" className="w-full" type="submit" form="bag-checkout" disabled={submitting || lines.length === 0}>
                     {submitting ? "Placing your order…" : `Place order · ${formatPrice(bagTotal)}`} <Icon.Arrow className="h-3.5 w-3.5" />
                   </Button>
-                  <button onClick={() => setStep("bag")} className="link-draw mx-auto mt-4 block eyebrow text-[10px] text-cream/50 hover:text-cream">
+                  <button disabled={submitting} onClick={() => setStep("bag")} className="link-draw mx-auto mt-4 block eyebrow text-[10px] text-cream/50 hover:text-cream">
                     Back to bag
                   </button>
                 </div>
@@ -286,7 +300,7 @@ export default function BagDrawer() {
                   <Icon.Check className="h-6 w-6 text-gold" />
                 </span>
                 <p className="eyebrow mt-8 text-[10px] text-gold/70">Order confirmed</p>
-                <p className="display mt-3 text-4xl">{placed.ref}</p>
+                <p className="mt-3 break-all font-display text-2xl tracking-wide">{placed.ref}</p>
                 <p className="mt-4 max-w-[32ch] font-sans text-xs font-light leading-relaxed text-cream/70">
                   Thank you — your order of {formatPrice(placed.total)} is sealed. Cash on delivery; our courier will call you to confirm.
                 </p>

@@ -28,11 +28,11 @@ export type CapSpring = {
   reset: () => void;
 };
 
-export function createCapSpring(cap: THREE.Group, unit: number): CapSpring {
+export function createCapSpring(cap: THREE.Group, unit: number, pose: typeof CAP_TRAVEL = CAP_TRAVEL): CapSpring {
   const rest = cap.position.clone();
   const restQuat = cap.quaternion.clone();
   const liftedQuat = restQuat.clone().multiply(
-    new THREE.Quaternion().setFromEuler(new THREE.Euler(0, CAP_TRAVEL.rotationY, CAP_TRAVEL.rotationZ, "XYZ")),
+    new THREE.Quaternion().setFromEuler(new THREE.Euler(0, pose.rotationY, pose.rotationZ, "XYZ")),
   );
 
   let progress = 0;
@@ -45,9 +45,9 @@ export function createCapSpring(cap: THREE.Group, unit: number): CapSpring {
     const swing = easeInOut((progress - 0.38) / 0.62);
     const arc = Math.sin(swing * Math.PI) * 0.045;
     cap.position.copy(rest);
-    cap.position.x += CAP_TRAVEL.offsetX * swing * unit;
-    cap.position.y += (CAP_TRAVEL.lift * lift + arc) * unit;
-    cap.position.z += CAP_TRAVEL.offsetZ * swing * unit;
+    cap.position.x += pose.offsetX * swing * unit;
+    cap.position.y += (pose.lift * lift + arc) * unit;
+    cap.position.z += pose.offsetZ * swing * unit;
     cap.quaternion.slerpQuaternions(restQuat, liftedQuat, swing);
   };
 

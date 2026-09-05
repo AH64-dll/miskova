@@ -9,7 +9,10 @@ export default function Curtain() {
   const [done, setDone] = useState(true);
   useEffect(() => {
     try {
-      if (sessionStorage.getItem("miskova-curtain-shown")) return;
+      if (sessionStorage.getItem("miskova-curtain-shown") || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        setDone(true);
+        return;
+      }
       sessionStorage.setItem("miskova-curtain-shown", "1");
     } catch {
       return;
@@ -22,7 +25,8 @@ export default function Curtain() {
     <AnimatePresence>
       {!done && (
         <motion.div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-ink text-cream"
+          aria-hidden="true"
+          className="pointer-events-none fixed inset-0 z-[100] flex items-center justify-center bg-ink text-cream"
           exit={{ y: "-100%" }}
           transition={{ duration: 0.9, ease: [0.76, 0, 0.24, 1] }}
         >

@@ -70,7 +70,7 @@ check(
 );
 check(
   "announcement present",
-  html.includes("FREE SHIPPING FOR ANY ORDER ABOVE 1200EGP") || (html.includes("SHIPPING") && html.includes("1200")),
+  /(?:complimentary delivery|free shipping)/i.test(html) && html.includes("1200"),
 );
 // Category membership counts from live response
 const inCat = (slug) => live.filter((p) => p.cats.includes(slug)).length;
