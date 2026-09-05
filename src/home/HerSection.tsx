@@ -1,5 +1,7 @@
 "use client";
 
+import { BASE_PATH } from "@/utils/basePath";
+
 import { motion, useScroll, useTransform } from "motion/react";
 import { useRef } from "react";
 import { collections } from "@/data/products";
@@ -19,7 +21,7 @@ export default function HerSection() {
   return (
     <section id="her" data-tone="light" className="relative overflow-hidden bg-her-bg text-her-ink">
       {/* silk backdrop */}
-      <img src="/images/her-bg.jpg" alt="" className="absolute inset-0 h-full w-full object-cover opacity-[0.22]" loading="lazy" />
+      <img src={`${BASE_PATH}/images/her-bg.jpg`} alt="" className="absolute inset-0 h-full w-full object-cover opacity-[0.22]" loading="lazy" />
       <div className="absolute inset-0 bg-gradient-to-b from-her-bg via-her-bg/60 to-her-bg" />
       {/* petals */}
       <span className="pointer-events-none absolute left-[8%] top-[14%] h-40 w-40 animate-drift rounded-full bg-her-rose/10 blur-3xl" />

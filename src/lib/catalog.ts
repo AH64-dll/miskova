@@ -55,23 +55,25 @@ function collapseName(raw: string): string {
   return raw.replace(/\s+/g, " ").trim();
 }
 
+const BASE = process.env.NEXT_PUBLIC_BASE_PATH || "";
+
 const LOCAL_PRODUCT_IMAGES: Record<string, string> = {
-  "Day-and-Night": "/assets/products/Day-and-Night.webp",
-  "Spider-bundle": "/assets/products/Spider-bundle.webp",
-  "Fruit-Fusion": "/assets/products/Fruit-Fusion.webp",
-  "Pacific-Sol": "/assets/products/Pacific-Sol.webp",
-  Heir: "/assets/products/Heir.webp",
-  "Third-Act": "/assets/products/Third-Act.webp",
-  "Vintage-Lounge": "/assets/products/Vintage-Lounge.webp",
-  "Crimson-Bloom": "/assets/products/Crimson-Bloom.webp",
-  "Exotic-Dusk": "/assets/products/Exotic-Dusk.webp",
-  "Eternal-Knot": "/assets/products/Eternal-Knot.webp",
-  "The-Pequod": "/assets/products/The-Pequod.webp",
-  "Ivory-Nectar": "/assets/products/Ivory-Nectar.webp",
-  "Liquid-Gold": "/assets/products/Liquid-Gold.webp",
-  "Heavens-cut": "/assets/products/Heavens-cut.webp",
-  "Sweet-Empire": "/assets/products/Sweet-Empire.webp",
-  "Y-code": "/assets/products/Y-code.webp",
+  "Day-and-Night": `${BASE}/assets/products/Day-and-Night.webp`,
+  "Spider-bundle": `${BASE}/assets/products/Spider-bundle.webp`,
+  "Fruit-Fusion": `${BASE}/assets/products/Fruit-Fusion.webp`,
+  "Pacific-Sol": `${BASE}/assets/products/Pacific-Sol.webp`,
+  Heir: `${BASE}/assets/products/Heir.webp`,
+  "Third-Act": `${BASE}/assets/products/Third-Act.webp`,
+  "Vintage-Lounge": `${BASE}/assets/products/Vintage-Lounge.webp`,
+  "Crimson-Bloom": `${BASE}/assets/products/Crimson-Bloom.webp`,
+  "Exotic-Dusk": `${BASE}/assets/products/Exotic-Dusk.webp`,
+  "Eternal-Knot": `${BASE}/assets/products/Eternal-Knot.webp`,
+  "The-Pequod": `${BASE}/assets/products/The-Pequod.webp`,
+  "Ivory-Nectar": `${BASE}/assets/products/Ivory-Nectar.webp`,
+  "Liquid-Gold": `${BASE}/assets/products/Liquid-Gold.webp`,
+  "Heavens-cut": `${BASE}/assets/products/Heavens-cut.webp`,
+  "Sweet-Empire": `${BASE}/assets/products/Sweet-Empire.webp`,
+  "Y-code": `${BASE}/assets/products/Y-code.webp`,
 };
 
 function rewriteImage(url: string): string {
@@ -155,9 +157,9 @@ export async function getCatalog(): Promise<CatalogSnapshot> {
       COLLECTION_SLUGS.her,
     ];
     const LOCAL_CATEGORY_IMAGES: Record<string, string> = {
-      [COLLECTION_SLUGS.summer]: "/assets/categories/Summer-fragrances.jpg",
-      [COLLECTION_SLUGS.him]: "/assets/categories/men-fragrances.jpg",
-      [COLLECTION_SLUGS.her]: "/assets/categories/women-fragrances.jpg",
+      [COLLECTION_SLUGS.summer]: `${BASE}/assets/categories/Summer-fragrances.jpg`,
+      [COLLECTION_SLUGS.him]: `${BASE}/assets/categories/men-fragrances.jpg`,
+      [COLLECTION_SLUGS.her]: `${BASE}/assets/categories/women-fragrances.jpg`,
     };
     const categories = rootOrder
       .map((slug) => {

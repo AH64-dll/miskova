@@ -6,6 +6,8 @@ import type { Review, ReviewStats } from "@/types/reviews";
 import { PatronCarousel } from "./reviews/PatronCarousel";
 import { useStore } from "@/components/store";
 import { Button, Eyebrow, Icon, Rule } from "@/components/ui";
+import { BASE_PATH } from "@/utils/basePath";
+import { initialReviews, calculateReviewStats } from "@/data/reviews";
 
 const HELPFUL_VOTES_KEY = "miskova:helpful-votes";
 
@@ -60,14 +62,16 @@ export function useReviews() {
   const fetchReviews = useCallback(async () => {
     setLoadState("loading");
     try {
-      const res = await fetch("/api/reviews");
+      const res = await fetch(`${BASE_PATH}/api/reviews`);
       if (!res.ok) throw new Error(`status ${res.status}`);
       const payload = await res.json();
       setReviewsList(payload.data ?? []);
       setStats(payload.stats ?? null);
       setLoadState("ready");
     } catch {
-      setLoadState("error");
+      setReviewsList(initialReviews);
+      setStats(calculateReviewStats(initialReviews));
+      setLoadState("ready");
     }
   }, []);
 

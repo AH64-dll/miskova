@@ -16,7 +16,7 @@ try {
   console.log("2. Running static build (GITHUB_PAGES=true)...");
   execSync("npx next build", {
     stdio: "inherit",
-    env: { ...process.env, GITHUB_PAGES: "true" },
+    env: { ...process.env, GITHUB_PAGES: "true", NEXT_PUBLIC_BASE_PATH: "/miskova" },
   });
 } finally {
   console.log("3. Restoring API routes...");
@@ -34,7 +34,51 @@ if (fs.existsSync(notFoundHtml)) {
   fs.copyFileSync(notFoundHtml, path.join(outDir, "404.html"));
 }
 
-console.log("6. Post-processing HTML and JS to ensure asset paths resolve under /miskova/...");
+console.log("6. Providing static mock for /api/reviews...");
+const staticApiReviewsDir = path.join(outDir, "api", "reviews");
+fs.mkdirSync(staticApiReviewsDir, { recursive: true });
+const staticReviewPayload = JSON.stringify({
+  success: true,
+  data: [],
+  stats: {
+    averageRating: 0,
+    totalReviews: 0,
+    breakdown: { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0 },
+  },
+  total: 0,
+});
+fs.writeFileSync(path.join(staticApiReviewsDir, "index.html"), staticReviewPayload);
+fs.writeFileSync(path.join(staticApiReviewsDir, "index.json"), staticReviewPayload);
+fs.writeFileSync(path.join(outDir, "api", "reviews.json"), staticReviewPayload);
+
+console.log("7. Mirroring assets and images under out/miskova/ for bulletproof resolution...");
+const miskovaSubdir = path.join(outDir, "miskova");
+fs.mkdirSync(miskovaSubdir, { recursive: true });
+
+function copyRecursive(src, dest) {
+  if (!fs.existsSync(src)) return;
+  const stats = fs.statSync(src);
+  if (stats.isDirectory()) {
+    fs.mkdirSync(dest, { recursive: true });
+    for (const file of fs.readdirSync(src)) {
+      copyRecursive(path.join(src, file), path.join(dest, file));
+    }
+  } else {
+    fs.copyFileSync(src, dest);
+  }
+}
+
+if (fs.existsSync(path.join(outDir, "assets"))) {
+  copyRecursive(path.join(outDir, "assets"), path.join(miskovaSubdir, "assets"));
+}
+if (fs.existsSync(path.join(outDir, "images"))) {
+  copyRecursive(path.join(outDir, "images"), path.join(miskovaSubdir, "images"));
+}
+if (fs.existsSync(path.join(outDir, "fonts"))) {
+  copyRecursive(path.join(outDir, "fonts"), path.join(miskovaSubdir, "fonts"));
+}
+
+console.log("8. Post-processing HTML and JS to ensure asset paths resolve under /miskova/...");
 function walk(dir) {
   const entries = fs.readdirSync(dir, { withFileTypes: true });
   for (const entry of entries) {
@@ -45,19 +89,23 @@ function walk(dir) {
       let content = fs.readFileSync(fullPath, "utf8");
       let changed = false;
 
-      // Replace /images/ with /miskova/images/ (avoid double prefixing)
-      if (content.includes('"/images/') || content.includes("'/images/")) {
-        content = content
-          .replaceAll('"/images/', '"/miskova/images/')
-          .replaceAll("'/images/", "'/miskova/images/");
+      // Replace /images/ with /miskova/images/ (handling double quotes, single quotes, backticks)
+      const imagesRegex = /([`"'])\/images\//g;
+      if (imagesRegex.test(content)) {
+        content = content.replace(/([`"'])\/images\//g, "$1/miskova/images/");
         changed = true;
       }
 
-      // Replace /assets/ with /miskova/assets/ (avoid double prefixing)
-      if (content.includes('"/assets/') || content.includes("'/assets/")) {
-        content = content
-          .replaceAll('"/assets/', '"/miskova/assets/')
-          .replaceAll("'/assets/", "'/miskova/assets/");
+      // Replace /assets/ with /miskova/assets/ (handling double quotes, single quotes, backticks)
+      const assetsRegex = /([`"'])\/assets\//g;
+      if (assetsRegex.test(content)) {
+        content = content.replace(/([`"'])\/assets\//g, "$1/miskova/assets/");
+        changed = true;
+      }
+
+      // Avoid any accidental double-prefixing like /miskova/miskova/
+      if (content.includes("/miskova/miskova/")) {
+        content = content.replaceAll("/miskova/miskova/", "/miskova/");
         changed = true;
       }
 

@@ -1,5 +1,7 @@
 "use client";
 
+import { BASE_PATH } from "@/utils/basePath";
+
 import { motion, useScroll, useTransform } from "motion/react";
 import { useRef } from "react";
 import { brand, products } from "@/data/products";
@@ -17,7 +19,7 @@ export default function StorySection() {
         {/* Portrait */}
         <Reveal className="relative lg:col-span-5">
           <div className="relative aspect-[3/4] overflow-hidden">
-            <motion.img src="/images/atelier-bg.jpg" alt="" style={{ y }} className="absolute inset-0 h-[124%] w-full -translate-y-[12%] object-cover" loading="lazy" />
+            <motion.img src={`${BASE_PATH}/images/atelier-bg.jpg`} alt="" style={{ y }} className="absolute inset-0 h-[124%] w-full -translate-y-[12%] object-cover" loading="lazy" />
             <div className="absolute inset-0 bg-gradient-to-t from-ink/60 to-transparent" />
             <span className="absolute -inset-3 border border-gold/20" />
           </div>

@@ -31,7 +31,8 @@ export type Product = {
   categorySlugs?: string[];
 };
 
-const img = (f: string) => `/assets/products/${f}.webp`;
+const BASE = process.env.NEXT_PUBLIC_BASE_PATH || "";
+const img = (f: string) => `${BASE}/assets/products/${f}.webp`;
 
 export const brand = {
   name: "Miskova",
@@ -74,7 +75,7 @@ export const brand = {
       },
     ],
   },
-  reviewImages: [1, 2, 3, 4, 5].map((n) => `/assets/reviews/dispatch-${n}.jpg`),
+  reviewImages: [1, 2, 3, 4, 5].map((n) => `${BASE}/assets/reviews/dispatch-${n}.jpg`),
 };
 
 export const products: Product[] = [
@@ -421,7 +422,7 @@ export const categories: Category[] = [
   {
     slug: "Summer-fragrances",
     name: "Summer Collection",
-    image: "/assets/categories/Summer-fragrances.jpg",
+    image: `${BASE}/assets/categories/Summer-fragrances.jpg`,
     productCount: 6,
     subtitle: "Mediterranean Sun & Coastal Breeze",
     tagline: "Vibrant, sun-kissed citrus and herbal notes",
@@ -429,7 +430,7 @@ export const categories: Category[] = [
   {
     slug: "men-fragrances",
     name: "For Him",
-    image: "/assets/categories/men-fragrances.jpg",
+    image: `${BASE}/assets/categories/men-fragrances.jpg`,
     productCount: 15,
     subtitle: "Architectural & Smoky Woods",
     tagline: "Distinguished leather, vetiver & noble spices",
@@ -437,7 +438,7 @@ export const categories: Category[] = [
   {
     slug: "women-fragrances",
     name: "For Her",
-    image: "/assets/categories/women-fragrances.jpg",
+    image: `${BASE}/assets/categories/women-fragrances.jpg`,
     productCount: 6,
     subtitle: "Velvet Florals & Golden Amber",
     tagline: "Intoxicating Damask rose, saffron & sweet resins",
@@ -712,7 +713,7 @@ const SEEDS: FallbackSeed[] = [
 function seedToProduct(seed: FallbackSeed): CatalogProduct {
   return {
     ...seed,
-    image: `/assets/products/${seed.slug}.webp`,
+    image: `${BASE}/assets/products/${seed.slug}.webp`,
     isAvailable: !seed.trackStock || seed.quantity > 0,
   };
 }
@@ -723,19 +724,19 @@ export const fallbackCatalog: CatalogSnapshot = {
     {
       slug: "Summer-fragrances",
       name: "Summer Collection",
-      image: "/assets/categories/Summer-fragrances.jpg",
+      image: `${BASE}/assets/categories/Summer-fragrances.jpg`,
       productCount: 6,
     },
     {
       slug: "men-fragrances",
       name: "For Him",
-      image: "/assets/categories/men-fragrances.jpg",
+      image: `${BASE}/assets/categories/men-fragrances.jpg`,
       productCount: 15,
     },
     {
       slug: "women-fragrances",
       name: "For Her",
-      image: "/assets/categories/women-fragrances.jpg",
+      image: `${BASE}/assets/categories/women-fragrances.jpg`,
       productCount: 6,
     },
   ],

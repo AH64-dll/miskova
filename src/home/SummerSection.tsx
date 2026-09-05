@@ -1,5 +1,7 @@
 "use client";
 
+import { BASE_PATH } from "@/utils/basePath";
+
 import { motion, useScroll, useTransform } from "motion/react";
 import { useRef } from "react";
 import { collections } from "@/data/products";
@@ -42,7 +44,7 @@ export default function SummerSection() {
 
           <Reveal persona="summer" delay={0.1} className="relative mt-10 md:mt-6">
             <div className="relative aspect-[16/10] overflow-hidden sm:aspect-[21/9]">
-              <motion.img src="/images/summer-bg.jpg" alt="" style={{ y: yImg }} className="absolute inset-0 h-[116%] w-full -translate-y-[8%] object-cover" loading="lazy" />
+              <motion.img src={`${BASE_PATH}/images/summer-bg.jpg`} alt="" style={{ y: yImg }} className="absolute inset-0 h-[116%] w-full -translate-y-[8%] object-cover" loading="lazy" />
               {/* sun */}
               <span className="absolute right-8 top-8 h-16 w-16 rounded-full bg-sum-sun/90 blur-[1px] md:h-24 md:w-24" />
               <span className="absolute right-8 top-8 h-16 w-16 animate-ripple rounded-full border border-sum-sun md:h-24 md:w-24" />

@@ -1,5 +1,7 @@
 "use client";
 
+import { BASE_PATH } from "@/utils/basePath";
+
 import Link from "next/link";
 import { motion, useScroll, useTransform } from "motion/react";
 import { useRef } from "react";
@@ -20,7 +22,7 @@ export default function HimSection() {
       {/* Intro: split editorial */}
       <div ref={ref} className="relative grid min-h-[90vh] grid-cols-1 lg:grid-cols-12">
         <div className="relative order-2 overflow-hidden lg:order-1 lg:col-span-6">
-          <motion.img src="/images/him-bg.jpg" alt="" style={{ y }} className="absolute inset-0 h-[120%] w-full -translate-y-[10%] object-cover" loading="lazy" />
+          <motion.img src={`${BASE_PATH}/images/him-bg.jpg`} alt="" style={{ y }} className="absolute inset-0 h-[120%] w-full -translate-y-[10%] object-cover" loading="lazy" />
           <div className="absolute inset-0 bg-gradient-to-r from-transparent to-him-bg/60 lg:bg-gradient-to-l" />
           <div className="relative flex h-[60vw] items-end p-6 lg:h-full lg:p-12">
             <p className="writing-v hidden rotate-180 eyebrow text-[10px] text-gold/70 lg:block">Collection · III — Chapters for him</p>

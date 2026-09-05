@@ -4,6 +4,9 @@ const isPages = process.env.GITHUB_PAGES === "true";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  env: {
+    NEXT_PUBLIC_BASE_PATH: isPages ? "/miskova" : "",
+  },
   output: isPages ? "export" : undefined,
   basePath: isPages ? "/miskova" : undefined,
   trailingSlash: isPages ? true : undefined,

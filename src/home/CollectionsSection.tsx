@@ -6,6 +6,7 @@ import { useState } from "react";
 import { collections } from "@/data/products";
 import { cn } from "@/utils/cn";
 import { Eyebrow, Icon, Reveal, Rule, useDesktop } from "@/components/ui";
+import { BASE_PATH } from "@/utils/basePath";
 
 const panels = [
   {
@@ -13,7 +14,7 @@ const panels = [
     label: "Summer",
     sub: "Collection",
     href: "/collections/summer",
-    img: "/images/summer-bg.jpg",
+    img: `${BASE_PATH}/images/summer-bg.jpg`,
     count: collections.summer.length,
     accent: "text-sum-sun",
     tint: "from-sum-deep/70",
@@ -24,7 +25,7 @@ const panels = [
     label: "For Him",
     sub: "Chapters",
     href: "/collections/for-him",
-    img: "/images/him-bg.jpg",
+    img: `${BASE_PATH}/images/him-bg.jpg`,
     count: collections.him.length,
     accent: "text-gold",
     tint: "from-ink/80",
@@ -35,7 +36,7 @@ const panels = [
     label: "For Her",
     sub: "Chapters",
     href: "/collections/for-her",
-    img: "/images/her-bg.jpg",
+    img: `${BASE_PATH}/images/her-bg.jpg`,
     count: collections.her.length,
     accent: "text-her-rose",
     tint: "from-her-deep/70",

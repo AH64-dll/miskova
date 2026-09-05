@@ -1,4 +1,6 @@
- "use client";
+"use client";
+
+import { BASE_PATH } from "@/utils/basePath";
 
  import { motion, useMotionValueEvent, useReducedMotion, useScroll, useTransform } from "motion/react";
  import dynamic from "next/dynamic";
@@ -65,7 +67,7 @@ export default function Hero() {
    return (
      <section ref={heroRef} id="top" data-tone="dark" className="grain relative min-h-[100svh] overflow-hidden bg-ink text-cream">
        {/* [0] backdrop texture + gradient */}
-       <img src="/images/hero-bg.jpg" alt="" className="absolute inset-0 z-0 h-full w-full object-cover opacity-80" fetchPriority="high" />
+      <img src={`${BASE_PATH}/images/hero-bg.jpg`} alt="" className="absolute inset-0 z-0 h-full w-full object-cover opacity-80" fetchPriority="high" />
        {/* [1] mist shader */}
        <ShaderCanvas frag={MIST} className="absolute inset-0 z-[1] h-full w-full mix-blend-screen opacity-90" />
        <div className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-t from-ink via-ink/20 to-ink/30" />
